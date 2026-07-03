@@ -1,0 +1,59 @@
+# Project Documents
+PRD_SnapBooth_Photobooth_Software.md
+implementation_plan.md
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+out/
+build/
+.next/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Electron
+release/
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+coverage/
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Native build
+native-bridge/build/
+native-bridge/Release/
+native-bridge/Debug/
+*.obj
+*.o
+*.exe
+*.dll
+*.pdb
