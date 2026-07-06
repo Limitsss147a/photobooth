@@ -9,6 +9,7 @@ config({ path: resolve(__dirname, '../../../../.env') })
 // Services
 import { getMidtransService } from './payment/midtrans'
 import { sendPhotoEmail } from './email/resend'
+import { createSession, createTransaction, updateTransactionStatus, savePhoto, getDefaultOutlet } from './db/supabase'
 
 let mainWindow: BrowserWindow | null = null
 let isKioskMode = false
@@ -177,6 +178,53 @@ function setupIpcHandlers(): void {
 
   ipcMain.handle('printer:status', async () => {
     return 'ready'
+  })
+
+  // ============================================================
+  // Database Handlers (Supabase)
+  // ============================================================
+
+  ipcMain.handle('db:create-session', async (_event, eventId: string | null) => {
+    try {
+      const outlet = await getDefaultOutlet()
+      const session = await createSession(null, eventId)
+      console.log('[DB] Session created:', session.id)
+      return session
+    } catch (error: any) {
+      console.error('[DB] Create session failed:', error.message)
+      return null
+    }
+  })
+
+  ipcMain.handle('db:create-transaction', async (_event, data: any) => {
+    try {
+      const txn = await createTransaction(data)
+      console.log('[DB] Transaction created:', txn.id)
+      return txn
+    } catch (error: any) {
+      console.error('[DB] Create transaction failed:', error.message)
+      return null
+    }
+  })
+
+  ipcMain.handle('db:update-payment-status', async (_event, sessionId: string, status: string) => {
+    try {
+      await updateTransactionStatus(sessionId, status)
+      console.log(`[DB] Transaction status updated: ${sessionId} → ${status}`)
+    } catch (error: any) {
+      console.error('[DB] Update status failed:', error.message)
+    }
+  })
+
+  ipcMain.handle('db:save-photo', async (_event, data: any) => {
+    try {
+      const photo = await savePhoto(data)
+      console.log('[DB] Photo saved:', photo.id)
+      return photo
+    } catch (error: any) {
+      console.error('[DB] Save photo failed:', error.message)
+      return null
+    }
   })
 }
 
