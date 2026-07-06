@@ -22,14 +22,32 @@ interface Props {
 export default function Complete({ session, config, onFinish }: Props) {
   const [email, setEmail] = useState('')
   const [emailSent, setEmailSent] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
 
   const handleSendEmail = async () => {
     if (!email || !email.includes('@')) return
     setSending(true)
-    await new Promise(r => setTimeout(r, 1500))
-    setEmailSent(true)
-    setSending(false)
+    setEmailError(null)
+
+    try {
+      // @ts-ignore - snapbooth is exposed via preload
+      const result = await window.snapbooth?.email?.sendPhoto(
+        email,
+        session.compositedImagePath || null
+      )
+
+      if (result?.success) {
+        setEmailSent(true)
+      } else {
+        setEmailError(result?.error || 'Gagal mengirim email')
+      }
+    } catch (err) {
+      console.error('Email send error:', err)
+      setEmailError('Gagal mengirim email. Coba lagi.')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -67,6 +85,9 @@ export default function Complete({ session, config, onFinish }: Props) {
             >
               {sending ? 'Mengirim...' : 'Kirim Softfile 📧'}
             </button>
+            {emailError && (
+              <p className="text-[var(--color-error)] text-sm mt-3">{emailError}</p>
+            )}
           </div>
         ) : (
           <div className="glass-card p-6 max-w-md mx-auto mb-8 border-[var(--color-success)]">

@@ -45,6 +45,12 @@ const snapboothApi = {
     force: () => ipcRenderer.invoke('sync:force')
   },
 
+  // Email
+  email: {
+    sendPhoto: (to: string, photoFilePath: string | null) =>
+      ipcRenderer.invoke('email:send-photo', to, photoFilePath)
+  },
+
   // System
   system: {
     setKioskMode: (enabled: boolean) => ipcRenderer.invoke('system:kiosk-mode', enabled)
