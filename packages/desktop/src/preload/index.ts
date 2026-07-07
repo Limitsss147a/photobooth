@@ -9,7 +9,7 @@ const snapboothApi = {
     disconnect: () => ipcRenderer.invoke('camera:disconnect'),
     startLiveView: () => ipcRenderer.invoke('camera:start-live-view'),
     stopLiveView: () => ipcRenderer.invoke('camera:stop-live-view'),
-    capture: () => ipcRenderer.invoke('camera:capture'),
+    capture: (sessionId: string, index: number) => ipcRenderer.invoke('camera:capture', sessionId, index),
     getStatus: () => ipcRenderer.invoke('camera:status'),
     onFrame: (callback: (frame: ArrayBuffer) => void) => {
       ipcRenderer.on('camera:frame', (_event, frame) => callback(frame))

@@ -19,11 +19,36 @@ export default function CaptureSession({ config, onCapture }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
-  // Setup webcam on mount
+  // Setup camera on mount
   useEffect(() => {
-    startCamera()
-    return () => stopCamera()
-  }, [])
+    if (config.camera_type === 'dslr') {
+      // For DSLR via DigiCamControl, live view is polled from the local web server
+      let isMounted = true
+      const updateLiveView = () => {
+        if (!isMounted || state !== 'preview') return
+        const img = new Image()
+        img.onload = () => {
+          if (videoRef.current) {
+            videoRef.current.style.backgroundImage = `url(${img.src})`
+            videoRef.current.style.backgroundSize = 'cover'
+            videoRef.current.style.backgroundPosition = 'center'
+          }
+          setTimeout(updateLiveView, 100) // Poll at 10fps
+        }
+        img.onerror = () => {
+          setTimeout(updateLiveView, 500) // Retry slower on error
+        }
+        img.src = `http://localhost:5513/liveview.jpg?t=${Date.now()}`
+      }
+      updateLiveView()
+
+      return () => { isMounted = false }
+    } else {
+      // Standard Webcam fallback
+      startCamera()
+      return () => stopCamera()
+    }
+  }, [config.camera_type, state])
 
   const startCamera = async () => {
     try {
@@ -66,29 +91,49 @@ export default function CaptureSession({ config, onCapture }: Props) {
     }, 1000)
   }, [config.countdown_seconds])
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     setState('flash')
 
-    // Capture from video
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current
-      const canvas = canvasRef.current
-      canvas.width = video.videoWidth || 1920
-      canvas.height = video.videoHeight || 1080
-      const ctx = canvas.getContext('2d')
-      if (ctx) {
-        // Apply rotation if needed
-        if (config.camera_rotation) {
-          ctx.save()
-          ctx.translate(canvas.width / 2, canvas.height / 2)
-          ctx.rotate((config.camera_rotation * Math.PI) / 180)
-          ctx.drawImage(video, -canvas.width / 2, -canvas.height / 2)
-          ctx.restore()
+    if (config.camera_type === 'dslr') {
+      try {
+        // @ts-ignore
+        const api = window.snapbooth
+        const sessionId = `session_${Date.now()}`
+        
+        // Trigger capture via main process (DigiCamControl)
+        const result = await api.camera.capture(sessionId, photos.length)
+        
+        if (result.success) {
+          // Pass the absolute file path, processing page will handle it
+          setCurrentPhoto(`file://${result.filePath.replace(/\\/g, '/')}`)
         } else {
-          ctx.drawImage(video, 0, 0)
+          console.error('DSLR Capture failed:', result.error)
+          alert('Gagal mengambil foto dari kamera (DSLR Error)')
         }
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
-        setCurrentPhoto(dataUrl)
+      } catch (err) {
+        console.error('DSLR Capture exception:', err)
+      }
+    } else {
+      // Capture from webcam video
+      if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current
+        const canvas = canvasRef.current
+        canvas.width = video.videoWidth || 1920
+        canvas.height = video.videoHeight || 1080
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          if (config.camera_rotation) {
+            ctx.save()
+            ctx.translate(canvas.width / 2, canvas.height / 2)
+            ctx.rotate((config.camera_rotation * Math.PI) / 180)
+            ctx.drawImage(video, -canvas.width / 2, -canvas.height / 2)
+            ctx.restore()
+          } else {
+            ctx.drawImage(video, 0, 0)
+          }
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
+          setCurrentPhoto(dataUrl)
+        }
       }
     }
 
@@ -96,7 +141,7 @@ export default function CaptureSession({ config, onCapture }: Props) {
     setTimeout(() => {
       setState('review')
       setCountdown(config.countdown_seconds)
-    }, 300)
+    }, 500) // Give it a bit more time for DSLR transfer
   }
 
   const acceptPhoto = () => {
@@ -127,16 +172,27 @@ export default function CaptureSession({ config, onCapture }: Props) {
     <div className="w-full h-full flex flex-col relative" style={{ background: '#000' }}>
       {/* Camera preview */}
       <div className="flex-1 relative overflow-hidden">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className={`w-full h-full object-cover ${state === 'review' ? 'hidden' : ''}`}
-          style={{
-            transform: config.camera_rotation ? `rotate(${config.camera_rotation}deg)` : undefined
-          }}
-        />
+        {config.camera_type === 'dslr' ? (
+          <div
+            ref={videoRef as any}
+            className={`w-full h-full ${state === 'review' ? 'hidden' : ''}`}
+            style={{
+              backgroundColor: '#111',
+              transform: config.camera_rotation ? `rotate(${config.camera_rotation}deg)` : undefined
+            }}
+          />
+        ) : (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`w-full h-full object-cover ${state === 'review' ? 'hidden' : ''}`}
+            style={{
+              transform: config.camera_rotation ? `rotate(${config.camera_rotation}deg)` : undefined
+            }}
+          />
+        )}
         <canvas ref={canvasRef} className="hidden" />
 
         {/* Captured photo review */}

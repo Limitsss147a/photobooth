@@ -44,7 +44,11 @@ export default function Processing({ session, config, onComplete }: Props) {
       for (let i = 0; i < session.capturedPhotos.length; i++) {
         const dataUrl = session.capturedPhotos[i]
 
-        if (api?.compositing?.savePhoto) {
+        if (dataUrl.startsWith('file://')) {
+          // Photo is already a local file (from DSLR)
+          savedPaths.push(dataUrl.replace('file://', ''))
+        } else if (api?.compositing?.savePhoto) {
+          // Photo is a base64 string (from Webcam)
           const filePath = await api.compositing.savePhoto(dataUrl, sessionId, i)
           if (filePath) savedPaths.push(filePath)
         } else {

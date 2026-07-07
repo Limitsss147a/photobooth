@@ -12,6 +12,7 @@ import { sendPhotoEmail } from './email/resend'
 import { createSession, createTransaction, updateTransactionStatus, savePhoto, getDefaultOutlet } from './db/supabase'
 import { saveBase64Photo, compositePhotos, getPhotosDir } from './compositing'
 import { printImage, getAvailablePrinters } from './printing'
+import { captureDSLRPhoto } from './camera/digicam'
 
 let mainWindow: BrowserWindow | null = null
 let isKioskMode = false
@@ -148,11 +149,17 @@ function setupIpcHandlers(): void {
   // ============================================================
 
   ipcMain.handle('camera:connect', async () => {
-    return { success: true, type: 'webcam' as const }
+    return { success: true, type: 'dslr' as const }
   })
 
-  ipcMain.handle('camera:capture', async () => {
-    return { filePath: '' }
+  ipcMain.handle('camera:capture', async (_event, sessionId: string, index: number) => {
+    try {
+      const filePath = await captureDSLRPhoto(sessionId, index)
+      return { success: true, filePath }
+    } catch (error: any) {
+      console.error('[Camera] Capture failed:', error.message)
+      return { success: false, error: error.message }
+    }
   })
 
   // ============================================================
@@ -279,7 +286,7 @@ function getDefaultConfig() {
     max_retakes: 2,
     session_timeout_seconds: 180,
     idle_timeout_seconds: 60,
-    camera_type: 'webcam',
+    camera_type: 'dslr',
     camera_rotation: 0,
     base_price: 10000,
     accept_cash: true,
