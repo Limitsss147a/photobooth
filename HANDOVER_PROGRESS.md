@@ -37,8 +37,9 @@ Seluruh service pihak ketiga telah terintegrasi di `packages/desktop/src/main/`:
 | **Midtrans** | `payment/midtrans.ts` | Create QRIS, Check Status, Cancel | ✅ |
 | **Resend** | `email/resend.ts` | Kirim foto via email (HTML branded) | ✅ |
 | **Supabase** | `db/supabase.ts` | CRUD sessions, transactions, photos | ✅ |
-| **Sharp** | `compositing/index.ts` | Save foto, apply filter, composite + frame | ✅ **BARU** |
-| **Print** | `printing/index.ts` | Print ke printer Windows (silent, 4×6) | ✅ **BARU** |
+| **Sharp** | `compositing/index.ts` | Save foto, apply filter, composite + frame | ✅ |
+| **Print** | `printing/index.ts` | Print ke printer Windows (silent, 4×6) | ✅ |
+| **DigiCam** | `camera/digicam.ts` | DSLR Web API capture & live view (DigiCamControl) | ✅ **BARU** |
 
 ### C. Image Compositing Pipeline (✅ BARU — Selesai)
 File: `src/main/compositing/index.ts`
@@ -55,9 +56,14 @@ File: `src/main/printing/index.ts`
 *   Ukuran halaman: 4×6 inci
 *   Support multiple copies
 
-### E. Yang Masih Berupa Placeholder (⏳)
-1.  **Canon EDSDK** — Belum ada akses SDK. Webcam digunakan sebagai fallback.
-2.  **Web Dashboard** — Belum dimulai (`packages/dashboard`).
+### E. Integrasi Kamera DSLR (✅ BARU — Selesai)
+File: `src/main/camera/digicam.ts`
+Karena keterbatasan akses *Canon EDSDK*, sistem telah dialihkan untuk menggunakan **DigiCamControl** (standar industri open-source).
+*   **Live View**: Mengambil aliran MJPEG dari `localhost:5513` secara langsung.
+*   **Capture**: Mengirim perintah HTTP `?slc=capture` dan mendownload foto resolusi penuh.
+
+### F. Yang Masih Berupa Placeholder (⏳)
+1.  **Web Dashboard** — Belum dimulai (`packages/dashboard`).
 
 ---
 
@@ -91,17 +97,16 @@ RESEND_API_KEY=re_...
 
 ## 5. Posisi Terakhir Pengerjaan (Checkpoint)
 *   **Kode**: Bersih, sudah di-push ke `https://github.com/Limitsss147a/photobooth.git` branch `main`.
-*   **Blokir**: User perlu menjalankan `supabase/migrations/001_initial_schema.sql` di Supabase SQL Editor.
-*   **Canon SDK**: Menunggu akses dari Canon Developer Programme.
+*   **Blokir**: Tidak ada. Masalah Canon SDK sudah diatasi menggunakan DigiCamControl API.
+*   **Catatan Email**: Pengiriman email dengan Resend versi Free Tier *hanya* bisa dikirim ke email terdaftar. Untuk ke email tamu, harus verifikasi domain sendiri di Resend.
 
 ---
 
 ## 6. Langkah Selanjutnya
 
-1.  **Jalankan SQL Migration** → Supabase Dashboard → SQL Editor → paste `001_initial_schema.sql` → Run.
-2.  **Webhook Midtrans** — Endpoint untuk terima notifikasi pembayaran QRIS.
-3.  **Supabase Storage** — Upload foto hasil composite ke cloud storage.
-4.  **Canon EDSDK Bridge** — Setelah SDK tersedia, buat C++ addon/wrapper.
+1.  **Webhook Midtrans** — Endpoint untuk terima notifikasi pembayaran QRIS (Settlement/Cancel/Expire).
+2.  **Supabase Storage** — Upload foto hasil composite ke cloud storage agar tamu bisa mendownload via link email.
+3.  **Web Dashboard (Next.js)** — Admin panel di `packages/dashboard` untuk atur harga, frame, dll.
 5.  **Web Dashboard (Next.js)** — Admin panel di `packages/dashboard`.
 
 ## 7. Referensi Struktur File
@@ -109,10 +114,11 @@ RESEND_API_KEY=re_...
 packages/desktop/src/
 ├── main/
 │   ├── index.ts              ← Entry point + IPC handlers
-│   ├── compositing/index.ts  ← Sharp image processing    ← BARU
-│   ├── printing/index.ts     ← Windows print service     ← BARU
+│   ├── compositing/index.ts  ← Sharp image processing
+│   ├── printing/index.ts     ← Windows print service
 │   ├── payment/midtrans.ts   ← Midtrans QRIS
 │   ├── email/resend.ts       ← Resend email
+│   ├── camera/digicam.ts     ← DigiCamControl API        ← BARU
 │   └── db/
 │       ├── supabase.ts       ← Supabase client + helpers
 │       └── setup.ts          ← DB migration script
