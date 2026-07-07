@@ -7,7 +7,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
-        external: ['better-sqlite3', 'midtrans-client', 'resend']
+        external: ['better-sqlite3', 'midtrans-client', 'resend', 'sharp']
       }
     }
   },

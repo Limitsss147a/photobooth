@@ -20,7 +20,8 @@ const snapboothApi = {
   printer: {
     print: (imagePath: string, copies: number) =>
       ipcRenderer.invoke('printer:print', imagePath, copies),
-    getStatus: () => ipcRenderer.invoke('printer:status')
+    getStatus: () => ipcRenderer.invoke('printer:status'),
+    list: () => ipcRenderer.invoke('printer:list')
   },
 
   // Payment
@@ -31,6 +32,24 @@ const snapboothApi = {
     onStatusUpdate: (callback: (status: string) => void) => {
       ipcRenderer.on('payment:status-update', (_event, status) => callback(status))
     }
+  },
+
+  // Compositing
+  compositing: {
+    savePhoto: (dataUrl: string, sessionId: string, index: number) =>
+      ipcRenderer.invoke('compositing:save-photo', dataUrl, sessionId, index),
+    process: (options: { photoPaths: string[]; filter: string; frameId: string; sessionId: string }) =>
+      ipcRenderer.invoke('compositing:process', options),
+    getOutputDir: () => ipcRenderer.invoke('compositing:get-output-dir')
+  },
+
+  // Database
+  db: {
+    createSession: (eventId: string | null) => ipcRenderer.invoke('db:create-session', eventId),
+    createTransaction: (data: any) => ipcRenderer.invoke('db:create-transaction', data),
+    updatePaymentStatus: (sessionId: string, status: string) =>
+      ipcRenderer.invoke('db:update-payment-status', sessionId, status),
+    savePhoto: (data: any) => ipcRenderer.invoke('db:save-photo', data)
   },
 
   // Config

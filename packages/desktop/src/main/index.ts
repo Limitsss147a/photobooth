@@ -10,6 +10,8 @@ config({ path: resolve(__dirname, '../../../../.env') })
 import { getMidtransService } from './payment/midtrans'
 import { sendPhotoEmail } from './email/resend'
 import { createSession, createTransaction, updateTransactionStatus, savePhoto, getDefaultOutlet } from './db/supabase'
+import { saveBase64Photo, compositePhotos, getPhotosDir } from './compositing'
+import { printImage, getAvailablePrinters } from './printing'
 
 let mainWindow: BrowserWindow | null = null
 let isKioskMode = false
@@ -29,7 +31,7 @@ function createWindow(): void {
     autoHideMenuBar: true,
     icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
+      preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       nodeIntegration: false,
       contextIsolation: true
@@ -81,7 +83,6 @@ function setupIpcHandlers(): void {
 
   // Config
   ipcMain.handle('config:get', async () => {
-    // TODO: Load from SQLite / Supabase sync
     return getDefaultConfig()
   })
 
@@ -109,7 +110,7 @@ function setupIpcHandlers(): void {
       return result.transactionStatus
     } catch (error: any) {
       console.error('[Payment] Status check failed:', error.message)
-      return 'pending' // Default to pending on error
+      return 'pending'
     }
   })
 
@@ -147,37 +148,81 @@ function setupIpcHandlers(): void {
   // ============================================================
 
   ipcMain.handle('camera:connect', async () => {
-    // Webcam fallback — camera handled by renderer via MediaDevices API
     return { success: true, type: 'webcam' as const }
   })
 
   ipcMain.handle('camera:capture', async () => {
-    // Capture handled by renderer canvas — this is a placeholder
     return { filePath: '' }
   })
 
   // ============================================================
-  // Printer Handlers
+  // Compositing Handlers (NEW)
+  // ============================================================
+
+  ipcMain.handle('compositing:save-photo', async (_event, dataUrl: string, sessionId: string, index: number) => {
+    try {
+      const filePath = await saveBase64Photo(dataUrl, sessionId, index)
+      console.log(`[Compositing] Photo saved: ${filePath}`)
+      return filePath
+    } catch (error: any) {
+      console.error('[Compositing] Save failed:', error.message)
+      return null
+    }
+  })
+
+  ipcMain.handle('compositing:process', async (_event, options: {
+    photoPaths: string[]
+    filter: string
+    frameId: string
+    sessionId: string
+  }) => {
+    try {
+      const outputPath = await compositePhotos(options)
+      console.log(`[Compositing] Final image: ${outputPath}`)
+      return outputPath
+    } catch (error: any) {
+      console.error('[Compositing] Process failed:', error.message)
+      return null
+    }
+  })
+
+  ipcMain.handle('compositing:get-output-dir', async () => {
+    return getPhotosDir()
+  })
+
+  // ============================================================
+  // Printer Handlers (UPDATED)
   // ============================================================
 
   ipcMain.handle('printer:print', async (_event, imagePath: string, copies: number) => {
     try {
-      // Use Electron's built-in print functionality
-      if (mainWindow) {
-        // For now, print the current window content
-        // TODO: Create a hidden print window with the composited image
-        console.log(`[Printer] Print requested: ${imagePath}, copies: ${copies}`)
-        return { success: true }
-      }
-      return { success: false }
+      const result = await printImage(imagePath, copies)
+      console.log(`[Printer] Print result: ${result.success ? 'OK' : result.error}`)
+      return result
     } catch (error: any) {
       console.error('[Printer] Print failed:', error.message)
-      return { success: false }
+      return { success: false, error: error.message }
     }
   })
 
   ipcMain.handle('printer:status', async () => {
-    return 'ready'
+    if (!mainWindow) return 'offline'
+    try {
+      const printers = await getAvailablePrinters(mainWindow)
+      const defaultPrinter = printers.find(p => p.isDefault)
+      return defaultPrinter ? 'ready' : 'no_printer'
+    } catch {
+      return 'offline'
+    }
+  })
+
+  ipcMain.handle('printer:list', async () => {
+    if (!mainWindow) return []
+    try {
+      return await getAvailablePrinters(mainWindow)
+    } catch {
+      return []
+    }
   })
 
   // ============================================================
@@ -186,7 +231,6 @@ function setupIpcHandlers(): void {
 
   ipcMain.handle('db:create-session', async (_event, eventId: string | null) => {
     try {
-      const outlet = await getDefaultOutlet()
       const session = await createSession(null, eventId)
       console.log('[DB] Session created:', session.id)
       return session
