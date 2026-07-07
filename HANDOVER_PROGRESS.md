@@ -1,4 +1,4 @@
-# Laporan Progres Pengembangan SnapBooth (Sampai 6 Juli 2026)
+# Laporan Progres Pengembangan SnapBooth (Sampai 7 Juli 2026)
 
 Dokumen ini berisi rangkuman komprehensif tentang status pengerjaan proyek **SnapBooth (Photobooth Software)** berdasarkan *Product Requirements Document (PRD)* dan *Implementation Plan* awal. Tujuannya adalah sebagai catatan *handover* (serah terima) yang jelas agar agen/developer selanjutnya dapat melanjutkan pengerjaan dengan mulus.
 
@@ -7,77 +7,127 @@ Dokumen ini berisi rangkuman komprehensif tentang status pengerjaan proyek **Sna
 ## 1. Arsitektur & Teknologi (Selesai Setup)
 *   **Monorepo Structure**: Menggunakan `pnpm workspaces`.
 *   **Desktop App (Kiosk)**: Electron + React + TypeScript + Vite (`packages/desktop`).
-*   **Shared Library**: Modul `packages/shared` untuk tipe data (interfaces) yang akan digunakan bersama (Desktop & Web Dashboard).
+*   **Shared Library**: Modul `packages/shared` untuk tipe data (interfaces).
 *   **Design System**: Tailwind CSS dengan tema dark mode, glassmorphism, dan *micro-animations*.
 *   **Database**: Supabase (PostgreSQL).
-*   **Payment Gateway**: Midtrans (QRIS).
+*   **Payment Gateway**: Midtrans (QRIS) — Core API.
 *   **Email Delivery**: Resend.
+*   **Image Processing**: Sharp (compositing, filter, resize).
 
 ---
 
 ## 2. Status Fitur Utama (Berdasarkan PRD)
 
 ### A. Desktop UI & Flow (✅ Selesai)
-Alur UI dari awal hingga akhir sudah berhasil dibangun dan dapat berjalan di dalam Electron window (kiosk mode tersedia).
-1.  **Attract Screen (`AttractScreen.tsx`)**: Layar *idle* dengan animasi partikel dan *glowing border*.
-2.  **Package Selection (`SelectPackage.tsx`)**: Pilihan paket (Basic, Standard, Premium) dengan indikator harga.
-3.  **Payment Method (`Payment.tsx`)**: Pemilihan metode pembayaran (QRIS / Tunai).
-4.  **Capture Session (`CaptureSession.tsx`)**: Tampilan *live-view* kamera, *countdown*, *flash effect*, dan hasil *capture*.
-5.  **Filter Selection (`SelectFilter.tsx`)**: Pemilihan dari 9 CSS filters dengan *live preview*.
-6.  **Frame Selection (`SelectFrame.tsx`)**: Grid untuk memilih desain *frame*.
-7.  **Processing (`Processing.tsx`)**: Animasi *progress bar* untuk *compositing* dan proses *printing*.
-8.  **Complete (`Complete.tsx`)**: Layar akhir, menyertakan input form untuk mengirim hasil foto (*softfile*) via Email.
+Alur UI dari awal hingga akhir sudah dibangun lengkap dan berjalan di dalam Electron window.
+1.  **Attract Screen** (`AttractScreen.tsx`) — animasi partikel, glow, CTA
+2.  **Package Selection** (`SelectPackage.tsx`) — 3 tier (Basic/Standard/Premium)
+3.  **Payment** (`Payment.tsx`) — QRIS & Tunai method cards
+4.  **Capture Session** (`CaptureSession.tsx`) — webcam live-view, countdown, flash, retake
+5.  **Filter Selection** (`SelectFilter.tsx`) — 9 CSS filters + live preview
+6.  **Frame Selection** (`SelectFrame.tsx`) — grid frame + kategori + harga
+7.  **Processing** (`Processing.tsx`) — **3-step real pipeline**: Save → Composite → Print
+8.  **Complete** (`Complete.tsx`) — kirim foto via email (Resend)
 
-### B. Integrasi Backend & Layanan Eksternal (✅ Selesai)
-Konfigurasi dan kode integrasi untuk layanan pihak ketiga telah ditulis dan dipasang di Electron *Main Process* (`packages/desktop/src/main/`).
-1.  **Database (Supabase)**:
-    *   File: `src/main/db/supabase.ts` (Client & Helper functions).
-    *   *Schema SQL* lengkap (9 tabel) sudah dibuat di `supabase/migrations/001_initial_schema.sql` (Perlu di-*run* manual oleh User di dashboard Supabase).
-2.  **Payment (Midtrans)**:
-    *   File: `src/main/payment/midtrans.ts`.
-    *   Fitur: Create QRIS Charge, Check Status, Cancel Transaction menggunakan Midtrans Core API.
-3.  **Email (Resend)**:
-    *   File: `src/main/email/resend.ts`.
-    *   Fitur: Pengiriman email HTML *branded* dengan *attachment* atau *download link*.
-4.  **IPC Bridge (Preload)**:
-    *   Fungsi-fungsi API (Camera, Printer, Payment, Config, Email, Sync, System) telah diekspos dengan aman dari *Main Process* ke *Renderer* via `contextBridge` (`packages/desktop/src/preload/index.ts`).
+### B. Backend Services di Electron Main Process (✅ Selesai)
+Seluruh service pihak ketiga telah terintegrasi di `packages/desktop/src/main/`:
 
-### C. Yang Masih Berupa "Placeholder" (⏳ Menunggu Dikerjakan)
-1.  **Integrasi Kamera Asli (Canon EDSDK)**:
-    *   Saat ini `camera:connect` dan `camera:capture` di IPC Handler masih berupa *mock/fallback* (webcam) karena menunggu akses Canon Developer Programme.
-2.  **Printing Asli (Windows Print Spooler)**:
-    *   Saat ini `printer:print` hanya me-log request dan mengembalikan `success: true`. Logika sebenarnya untuk memanggil printer Windows belum diimplementasikan.
-3.  **Web Dashboard (Admin Panel)**:
-    *   Belum dimulai (direncanakan di `packages/dashboard` menggunakan Next.js). Ini dijadwalkan pada Sprint 5.
+| Service | File | Fungsi | Status |
+|---|---|---|---|
+| **Midtrans** | `payment/midtrans.ts` | Create QRIS, Check Status, Cancel | ✅ |
+| **Resend** | `email/resend.ts` | Kirim foto via email (HTML branded) | ✅ |
+| **Supabase** | `db/supabase.ts` | CRUD sessions, transactions, photos | ✅ |
+| **Sharp** | `compositing/index.ts` | Save foto, apply filter, composite + frame | ✅ **BARU** |
+| **Print** | `printing/index.ts` | Print ke printer Windows (silent, 4×6) | ✅ **BARU** |
+
+### C. Image Compositing Pipeline (✅ BARU — Selesai)
+File: `src/main/compositing/index.ts`
+*   **Save foto**: Data URL (base64) dari webcam → file JPEG di `%AppData%/photos/`
+*   **Apply filter**: 9 filter menggunakan Sharp (bw, sepia, vintage, warm, cool, vivid, fade, beauty)
+*   **Composite**: Foto + frame overlay → output JPEG print-ready (1800×1200px, 300dpi)
+*   **Layout**: Support 1 foto (full), 2 foto (stacked), 3-4 foto (2×2 grid)
+*   **Branding**: Logo "SnapBooth" + tanggal otomatis di bagian bawah
+
+### D. Print Service (✅ BARU — Selesai)
+File: `src/main/printing/index.ts`
+*   Hidden BrowserWindow memuat gambar final → dicetak langsung ke printer default
+*   Mode *silent* (tanpa dialog print)
+*   Ukuran halaman: 4×6 inci
+*   Support multiple copies
+
+### E. Yang Masih Berupa Placeholder (⏳)
+1.  **Canon EDSDK** — Belum ada akses SDK. Webcam digunakan sebagai fallback.
+2.  **Web Dashboard** — Belum dimulai (`packages/dashboard`).
 
 ---
 
-## 3. Posisi Terakhir Pengerjaan (Checkpoint saat ini)
-*   Kode sudah rapi, bersih dari *error*, dan telah di-*push* ke repositori GitHub utama: `https://github.com/Limitsss147a/photobooth.git` di *branch* `main`.
-*   File rahasia (seperti `.env`) telah di-ignore dari Git dan API Key yang relevan (Midtrans, Supabase, Resend) sudah disematkan dalam *environment* lokal.
-*   **Blokir Saat Ini**: Menunggu pengguna menjalankan `supabase/migrations/001_initial_schema.sql` di SQL Editor pada dashboard Supabase mereka untuk membuat tabel-tabel di database.
+## 3. IPC Bridge (Preload) — API Lengkap
+
+```
+window.snapbooth.camera.*        — connect, capture, live-view
+window.snapbooth.printer.*       — print, getStatus, list
+window.snapbooth.payment.*       — createQris, checkStatus, cancel
+window.snapbooth.compositing.*   — savePhoto, process, getOutputDir
+window.snapbooth.db.*            — createSession, createTransaction, updatePaymentStatus, savePhoto
+window.snapbooth.email.*         — sendPhoto
+window.snapbooth.config.*        — get, update
+window.snapbooth.system.*        — setKioskMode
+```
 
 ---
 
-## 4. Langkah Selanjutnya (Panduan untuk Agen Berikutnya)
+## 4. Environment Variables (`.env`)
+```
+MIDTRANS_CLIENT_KEY=Mid-client-...
+MIDTRANS_SERVER_KEY=Mid-server-...
+MIDTRANS_IS_PRODUCTION=false
+SUPABASE_URL=https://bvvlhpecfpymgzjwvosp.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_...
+SUPABASE_SECRET_KEY=sb_secret_...
+RESEND_API_KEY=re_...
+```
 
-Jika agen baru mengambil alih proyek ini, silakan lanjutkan dengan langkah-langkah berikut secara berurutan:
+---
 
-1.  **Verifikasi Database**: Pastikan pengguna telah menjalankan *migration script* di Supabase dan tabel sudah terbentuk.
-2.  **Webhook Midtrans**: Buat *endpoint* (bisa menggunakan Supabase Edge Functions atau Next.js Route jika *dashboard* sudah ada) untuk menerima notifikasi status pembayaran QRIS (Settlement/Cancel/Expire) dan memperbarui tabel `transactions`.
-3.  **Image Compositing & Storage**: Implementasikan fungsi sesungguhnya di Electron Main Process untuk:
-    *   Menggabungkan (composite) foto-foto *capture* menjadi satu gambar akhir dengan *frame* yang dipilih (misal menggunakan modul `sharp` atau `canvas`).
-    *   Menyimpan hasil *composite* tersebut ke *local storage* dan mengunggahnya ke Supabase Storage (untuk keperluan *download link* di email).
-4.  **Integrasi Hardware Asli**:
-    *   Tulis Node.js *addon* (C++) atau gunakan wrapper (seperti `ffi-napi`) untuk Canon EDSDK setelah akses didapatkan.
-    *   Implementasikan fungsi *print* sesungguhnya.
-5.  **Memulai Web Dashboard**:
-    *   Inisialisasi project Next.js di `packages/dashboard`.
-    *   Gunakan `shared types` dari `packages/shared`.
+## 5. Posisi Terakhir Pengerjaan (Checkpoint)
+*   **Kode**: Bersih, sudah di-push ke `https://github.com/Limitsss147a/photobooth.git` branch `main`.
+*   **Blokir**: User perlu menjalankan `supabase/migrations/001_initial_schema.sql` di Supabase SQL Editor.
+*   **Canon SDK**: Menunggu akses dari Canon Developer Programme.
 
-## 5. Referensi Struktur File Penting
-*   `packages/desktop/src/main/index.ts`: Titik masuk *backend* Electron & IPC Handlers.
-*   `packages/desktop/src/preload/index.ts`: Definisi API aman yang dipakai oleh UI.
-*   `packages/desktop/src/renderer/src/App.tsx`: Controller alur layar (State machine).
-*   `packages/shared/src/index.ts`: Definisi tipe data global.
-*   `.env`: Kredensial API lokal (Midtrans, Supabase, Resend).
+---
+
+## 6. Langkah Selanjutnya
+
+1.  **Jalankan SQL Migration** → Supabase Dashboard → SQL Editor → paste `001_initial_schema.sql` → Run.
+2.  **Webhook Midtrans** — Endpoint untuk terima notifikasi pembayaran QRIS.
+3.  **Supabase Storage** — Upload foto hasil composite ke cloud storage.
+4.  **Canon EDSDK Bridge** — Setelah SDK tersedia, buat C++ addon/wrapper.
+5.  **Web Dashboard (Next.js)** — Admin panel di `packages/dashboard`.
+
+## 7. Referensi Struktur File
+```
+packages/desktop/src/
+├── main/
+│   ├── index.ts              ← Entry point + IPC handlers
+│   ├── compositing/index.ts  ← Sharp image processing    ← BARU
+│   ├── printing/index.ts     ← Windows print service     ← BARU
+│   ├── payment/midtrans.ts   ← Midtrans QRIS
+│   ├── email/resend.ts       ← Resend email
+│   └── db/
+│       ├── supabase.ts       ← Supabase client + helpers
+│       └── setup.ts          ← DB migration script
+├── preload/index.ts          ← Secure API bridge
+└── renderer/src/
+    ├── App.tsx               ← Flow state machine
+    ├── main.tsx              ← React entry point
+    ├── styles/index.css      ← Design system
+    └── pages/
+        ├── AttractScreen.tsx
+        ├── SelectPackage.tsx
+        ├── Payment.tsx
+        ├── CaptureSession.tsx
+        ├── SelectFilter.tsx
+        ├── SelectFrame.tsx
+        ├── Processing.tsx    ← Updated with real pipeline
+        └── Complete.tsx
+```
