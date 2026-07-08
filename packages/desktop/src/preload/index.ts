@@ -26,7 +26,7 @@ const snapboothApi = {
 
   // Payment
   payment: {
-    createQris: (amount: number) => ipcRenderer.invoke('payment:create-qris', amount),
+    createQris: (amount: number, sessionId: string) => ipcRenderer.invoke('payment:create-qris', amount, sessionId),
     checkStatus: (orderId: string) => ipcRenderer.invoke('payment:check-status', orderId),
     cancel: (orderId: string) => ipcRenderer.invoke('payment:cancel', orderId),
     onStatusUpdate: (callback: (status: string) => void) => {
@@ -66,8 +66,8 @@ const snapboothApi = {
 
   // Email
   email: {
-    sendPhoto: (to: string, photoFilePath: string | null) =>
-      ipcRenderer.invoke('email:send-photo', to, photoFilePath)
+    sendPhoto: (to: string, photoFilePath: string | null, sessionId: string) =>
+      ipcRenderer.invoke('email:send-photo', to, photoFilePath, sessionId)
   },
 
   // System

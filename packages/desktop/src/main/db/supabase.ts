@@ -1,6 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
-import { resolve } from 'path'
+import { resolve, basename } from 'path'
+import { readFileSync } from 'fs'
+import crypto from 'crypto'
 
 // Load .env from project root
 config({ path: resolve(__dirname, '../../../../.env') })
@@ -215,4 +217,40 @@ export async function getDefaultOutlet() {
     return null
   }
   return data
+}
+
+/**
+ * Upload a local file to Supabase Storage and get public URL
+ */
+export async function uploadPhotoToStorage(localFilePath: string, bucket: string = 'photos'): Promise<string | null> {
+  try {
+    const sb = getSupabase()
+    const fileName = basename(localFilePath)
+    const uniqueFileName = `${crypto.randomUUID()}_${fileName}`
+    const fileBuffer = readFileSync(localFilePath)
+
+    const { data, error } = await sb
+      .storage
+      .from(bucket)
+      .upload(uniqueFileName, fileBuffer, {
+        contentType: 'image/jpeg',
+        upsert: false
+      })
+
+    if (error) {
+      console.error('[Supabase Storage] Upload error:', error.message)
+      return null
+    }
+
+    const { data: publicUrlData } = sb
+      .storage
+      .from(bucket)
+      .getPublicUrl(data.path)
+
+    console.log(`[Supabase Storage] Uploaded successfully: ${publicUrlData.publicUrl}`)
+    return publicUrlData.publicUrl
+  } catch (err: any) {
+    console.error('[Supabase Storage] Exception during upload:', err.message)
+    return null
+  }
 }

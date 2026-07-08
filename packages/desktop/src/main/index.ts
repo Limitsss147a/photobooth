@@ -9,7 +9,7 @@ config({ path: resolve(__dirname, '../../../../.env') })
 // Services
 import { getMidtransService } from './payment/midtrans'
 import { sendPhotoEmail } from './email/resend'
-import { createSession, createTransaction, updateTransactionStatus, savePhoto, getDefaultOutlet } from './db/supabase'
+import { createSession, createTransaction, updateTransactionStatus, savePhoto, getDefaultOutlet, uploadPhotoToStorage } from './db/supabase'
 import { saveBase64Photo, compositePhotos, getPhotosDir } from './compositing'
 import { printImage, getAvailablePrinters } from './printing'
 import { captureDSLRPhoto } from './camera/digicam'
@@ -91,11 +91,26 @@ function setupIpcHandlers(): void {
   // Payment Handlers (Midtrans QRIS)
   // ============================================================
 
-  ipcMain.handle('payment:create-qris', async (_event, amount: number) => {
+  ipcMain.handle('payment:create-qris', async (_event, amount: number, sessionId: string) => {
     try {
       const midtrans = getMidtransService()
       const result = await midtrans.createQrisCharge(amount)
       console.log('[Payment] QRIS charge created:', result.orderId)
+      
+      // Save transaction to Supabase
+      try {
+        await createTransaction({
+          session_id: sessionId,
+          metode_bayar: 'qris',
+          jumlah: amount,
+          status_bayar: 'pending',
+          payment_gateway_ref: result.orderId
+        })
+      } catch (dbErr) {
+        console.error('[Payment] Failed to save transaction to DB:', dbErr)
+        // Proceed anyway, payment can still complete locally
+      }
+
       return { qrUrl: result.qrUrl, orderId: result.orderId }
     } catch (error: any) {
       console.error('[Payment] QRIS charge failed:', error.message)
@@ -129,12 +144,32 @@ function setupIpcHandlers(): void {
   // Email Handlers (Resend)
   // ============================================================
 
-  ipcMain.handle('email:send-photo', async (_event, to: string, photoFilePath: string | null) => {
+  ipcMain.handle('email:send-photo', async (_event, to: string, photoFilePath: string | null, sessionId: string) => {
     try {
+      let photoUrl: string | undefined = undefined
+
+      if (photoFilePath) {
+        // Upload to Supabase Storage first to get a public download link
+        console.log(`[Email] Uploading photo to storage: ${photoFilePath}`)
+        const uploadedUrl = await uploadPhotoToStorage(photoFilePath)
+        if (uploadedUrl) {
+          photoUrl = uploadedUrl
+          
+          // Also save to database
+          await savePhoto({
+            session_id: sessionId || `session_${Date.now()}`, // fallback if no active session tracking
+            file_url: uploadedUrl,
+            file_local_path: photoFilePath,
+            is_composited: true
+          })
+        }
+      }
+
       const result = await sendPhotoEmail({
         to,
         outletName: getDefaultConfig().outlet_name,
-        photoFilePath: photoFilePath || undefined
+        photoFilePath: photoFilePath || undefined,
+        photoUrl
       })
       console.log(`[Email] Sent to ${to}: ${result.success ? 'OK' : result.error}`)
       return result

@@ -5,13 +5,14 @@ import type { BoothConfig } from '@snapbooth/shared'
 interface Props {
   config: BoothConfig
   amount: number
+  sessionId: string
   onPaymentComplete: (method: 'qris' | 'cash', orderId: string | null) => void
   onBack: () => void
 }
 
 type PaymentState = 'select-method' | 'qris-waiting' | 'cash-input' | 'success' | 'failed'
 
-export default function Payment({ config, amount, onPaymentComplete, onBack }: Props) {
+export default function Payment({ config, amount, sessionId, onPaymentComplete, onBack }: Props) {
   const [state, setState] = useState<PaymentState>('select-method')
   const [qrUrl, setQrUrl] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
@@ -32,7 +33,7 @@ export default function Payment({ config, amount, onPaymentComplete, onBack }: P
 
     try {
       // @ts-ignore
-      const result = await window.snapbooth?.payment.createQris(amount)
+      const result = await window.snapbooth?.payment.createQris(amount, sessionId)
       if (result) {
         setQrUrl(result.qrUrl)
         setOrderId(result.orderId)

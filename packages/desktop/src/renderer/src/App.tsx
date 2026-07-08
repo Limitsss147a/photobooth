@@ -21,6 +21,7 @@ type AppStage =
   | 'complete'      // Done, show result
 
 interface SessionData {
+  id: string
   packagePrice: number
   paymentMethod: 'qris' | 'cash' | null
   orderId: string | null
@@ -32,6 +33,7 @@ interface SessionData {
 }
 
 const initialSessionData: SessionData = {
+  id: `session_${Date.now()}`,
   packagePrice: 0,
   paymentMethod: null,
   orderId: null,
@@ -107,7 +109,10 @@ export default function App() {
   }, [stage])
 
   const resetSession = () => {
-    setSession(initialSessionData)
+    setSession({
+      ...initialSessionData,
+      id: `session_${Date.now()}` // Generate new ID on reset
+    })
     setStage('attract')
   }
 
@@ -155,6 +160,7 @@ export default function App() {
           <Payment
             config={config}
             amount={session.packagePrice}
+            sessionId={session.id}
             onPaymentComplete={(method, orderId) => {
               updateSession({ paymentMethod: method, orderId })
               setStage('capture')
@@ -166,6 +172,7 @@ export default function App() {
         {stage === 'capture' && (
           <CaptureSession
             config={config}
+            sessionId={session.id}
             onCapture={(photos) => {
               updateSession({ capturedPhotos: photos })
               setStage('select-filter')

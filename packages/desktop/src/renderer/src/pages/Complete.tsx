@@ -3,6 +3,7 @@ import { Mail, PartyPopper, RotateCcw } from 'lucide-react'
 import type { BoothConfig } from '@snapbooth/shared'
 
 interface SessionData {
+  id: string
   packagePrice: number
   paymentMethod: 'qris' | 'cash' | null
   orderId: string | null
@@ -34,7 +35,8 @@ export default function Complete({ session, config, onFinish }: Props) {
       // @ts-ignore - snapbooth is exposed via preload
       const result = await window.snapbooth?.email?.sendPhoto(
         email,
-        session.compositedImagePath || null
+        session.compositedImagePath || null,
+        session.id
       )
 
       if (result?.success) {

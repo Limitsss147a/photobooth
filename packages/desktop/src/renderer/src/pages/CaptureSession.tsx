@@ -4,12 +4,13 @@ import type { BoothConfig } from '@snapbooth/shared'
 
 interface Props {
   config: BoothConfig
+  sessionId: string
   onCapture: (photos: string[]) => void
 }
 
 type CaptureState = 'preview' | 'countdown' | 'flash' | 'review'
 
-export default function CaptureSession({ config, onCapture }: Props) {
+export default function CaptureSession({ config, sessionId, onCapture }: Props) {
   const [state, setState] = useState<CaptureState>('preview')
   const [countdown, setCountdown] = useState(config.countdown_seconds)
   const [photos, setPhotos] = useState<string[]>([])
@@ -98,7 +99,6 @@ export default function CaptureSession({ config, onCapture }: Props) {
       try {
         // @ts-ignore
         const api = window.snapbooth
-        const sessionId = `session_${Date.now()}`
         
         // Trigger capture via main process (DigiCamControl)
         const result = await api.camera.capture(sessionId, photos.length)

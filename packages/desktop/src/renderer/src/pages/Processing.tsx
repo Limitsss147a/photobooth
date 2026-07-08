@@ -3,6 +3,7 @@ import { Loader2, Printer, ImageIcon, CheckCircle, AlertCircle } from 'lucide-re
 import type { BoothConfig } from '@snapbooth/shared'
 
 interface SessionData {
+  id: string
   packagePrice: number
   paymentMethod: 'qris' | 'cash' | null
   orderId: string | null
@@ -31,7 +32,6 @@ export default function Processing({ session, config, onComplete }: Props) {
   }, [])
 
   const runProcessing = async () => {
-    const sessionId = `session_${Date.now()}`
     // @ts-ignore
     const api = window.snapbooth
 
@@ -49,7 +49,7 @@ export default function Processing({ session, config, onComplete }: Props) {
           savedPaths.push(dataUrl.replace('file://', ''))
         } else if (api?.compositing?.savePhoto) {
           // Photo is a base64 string (from Webcam)
-          const filePath = await api.compositing.savePhoto(dataUrl, sessionId, i)
+          const filePath = await api.compositing.savePhoto(dataUrl, session.id, i)
           if (filePath) savedPaths.push(filePath)
         } else {
           // Browser fallback — just keep the data URLs
@@ -75,7 +75,7 @@ export default function Processing({ session, config, onComplete }: Props) {
           photoPaths: savedPaths,
           filter: session.selectedFilter,
           frameId: session.selectedFrameId || 'classic-white',
-          sessionId
+          sessionId: session.id
         })
 
         clearInterval(progressInterval)
