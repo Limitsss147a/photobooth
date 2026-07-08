@@ -1,65 +1,91 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { Activity, CreditCard, Users, TrendingUp } from "lucide-react";
+
+export default function OverviewPage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="space-y-8 animate-fade-in">
+      <header>
+        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+          Dashboard Overview
+        </h1>
+        <p className="text-slate-400 mt-1">Welcome back to SnapBooth Admin.</p>
+      </header>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <StatCard 
+          title="Total Revenue" 
+          value="Rp 1.240.000" 
+          trend="+12% from last week" 
+          icon={<CreditCard className="text-emerald-400" size={24} />} 
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+        <StatCard 
+          title="Total Sessions" 
+          value="124" 
+          trend="+8% from last week" 
+          icon={<Users className="text-indigo-400" size={24} />} 
+        />
+        <StatCard 
+          title="Active Devices" 
+          value="1" 
+          trend="All systems nominal" 
+          icon={<Activity className="text-rose-400" size={24} />} 
+        />
+        <StatCard 
+          title="Conversion Rate" 
+          value="98%" 
+          trend="Based on attract screen" 
+          icon={<TrendingUp className="text-amber-400" size={24} />} 
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Transactions placeholder */}
+        <div className="lg:col-span-2 glass-card p-6">
+          <h2 className="text-xl font-bold mb-4">Recent Transactions</h2>
+          <div className="bg-slate-900/50 rounded-xl border border-white/5 p-8 text-center text-slate-500">
+            Chart or table will be displayed here
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Popular Frames placeholder */}
+        <div className="glass-card p-6">
+          <h2 className="text-xl font-bold mb-4">Popular Frames</h2>
+          <div className="space-y-4">
+             {/* Mock Data */}
+             <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-white/5">
+                <span className="font-medium">Classic White</span>
+                <span className="text-xs py-1 px-2 rounded-full bg-indigo-500/20 text-indigo-400">45 uses</span>
+             </div>
+             <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-white/5">
+                <span className="font-medium">Vintage Polaroid</span>
+                <span className="text-xs py-1 px-2 rounded-full bg-indigo-500/20 text-indigo-400">32 uses</span>
+             </div>
+             <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-white/5">
+                <span className="font-medium">Neon Cyberpunk</span>
+                <span className="text-xs py-1 px-2 rounded-full bg-indigo-500/20 text-indigo-400">18 uses</span>
+             </div>
+          </div>
         </div>
-      </main>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ title, value, trend, icon }: { title: string, value: string, trend: string, icon: React.ReactNode }) {
+  return (
+    <div className="glass-card p-6 flex flex-col gap-4 group hover:border-indigo-500/30 transition-all duration-300">
+      <div className="flex justify-between items-start">
+        <div className="p-3 bg-slate-800/50 rounded-xl border border-white/5 group-hover:scale-110 group-hover:bg-slate-800 transition-all duration-300">
+          {icon}
+        </div>
+      </div>
+      <div>
+        <h3 className="text-slate-400 text-sm font-medium mb-1">{title}</h3>
+        <p className="text-3xl font-bold text-white tracking-tight">{value}</p>
+        <p className="text-xs text-slate-500 mt-2 font-medium">{trend}</p>
+      </div>
     </div>
   );
 }
