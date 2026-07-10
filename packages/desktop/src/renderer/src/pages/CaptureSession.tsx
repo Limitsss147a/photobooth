@@ -22,7 +22,7 @@ export default function CaptureSession({ config, sessionId, onCapture }: Props) 
 
   // Setup camera on mount
   useEffect(() => {
-    if (config.camera_type === 'dslr') {
+    if (config.camera_type !== 'webcam') {
       // For DSLR via DigiCamControl, live view is polled from the local web server
       let isMounted = true
       const updateLiveView = () => {
@@ -95,7 +95,7 @@ export default function CaptureSession({ config, sessionId, onCapture }: Props) 
   const capturePhoto = async () => {
     setState('flash')
 
-    if (config.camera_type === 'dslr') {
+    if (config.camera_type !== 'webcam') {
       try {
         // @ts-ignore
         const api = window.snapbooth
@@ -175,7 +175,7 @@ export default function CaptureSession({ config, sessionId, onCapture }: Props) 
     <div className="w-full h-full flex flex-col relative" style={{ background: '#000' }}>
       {/* Camera preview */}
       <div className="flex-1 relative overflow-hidden">
-        {config.camera_type === 'dslr' ? (
+        {config.camera_type !== 'webcam' ? (
           <div
             ref={videoRef as any}
             className={`w-full h-full ${state === 'review' ? 'hidden' : ''}`}

@@ -8,7 +8,7 @@
  * 4. Output: print-ready 4×6 image (1800×1200px @ 300dpi)
  */
 
-import sharp from 'sharp'
+import sharp, { OverlayOptions } from 'sharp'
 import { join } from 'path'
 import { mkdirSync, existsSync, writeFileSync } from 'fs'
 import { app } from 'electron'
@@ -190,7 +190,7 @@ export async function compositePhotos(options: {
   }).jpeg()
 
   // Process and place each photo
-  const compositeInputs: sharp.OverlayOptions[] = []
+  const compositeInputs: OverlayOptions[] = []
 
   for (let i = 0; i < Math.min(photoPaths.length, photoRegions.length); i++) {
     const region = photoRegions[i]
@@ -198,7 +198,7 @@ export async function compositePhotos(options: {
 
     // Apply filter
     if (filter !== 'none') {
-      photoBuffer = await applyFilter(photoBuffer, filter)
+      photoBuffer = await applyFilter(photoBuffer as any, filter) as any
     }
 
     // Resize to fit region

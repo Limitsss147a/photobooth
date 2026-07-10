@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, QrCode, Banknote, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import type { BoothConfig } from '@snapbooth/shared'

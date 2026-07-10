@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useState, useEffect, useCallback, useRef } from 'react'
 import AttractScreen from './pages/AttractScreen'
 import SelectPackage from './pages/SelectPackage'
