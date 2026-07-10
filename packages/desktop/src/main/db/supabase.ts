@@ -265,3 +265,21 @@ export async function uploadPhotoToStorage(localFilePath: string, bucket: string
     return null
   }
 }
+
+/**
+ * Get device configuration from Supabase
+ */
+export async function getDeviceConfig() {
+  const sb = getSupabase()
+  const { data, error } = await sb
+    .from('devices')
+    .select('config')
+    .limit(1)
+    .single()
+
+  if (error) {
+    console.error('[Supabase] Get device config error:', error.message)
+    return null
+  }
+  return data?.config
+}
