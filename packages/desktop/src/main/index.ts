@@ -321,7 +321,7 @@ function getDefaultConfig() {
     max_retakes: 2,
     session_timeout_seconds: 180,
     idle_timeout_seconds: 60,
-    camera_type: 'dslr',
+    camera_type: 'webcam',
     camera_rotation: 0,
     base_price: 10000,
     accept_cash: true,
