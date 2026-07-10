@@ -7,6 +7,13 @@ import crypto from 'crypto'
 // Load .env from project root
 config({ path: resolve(__dirname, '../../../../.env') })
 
+// Fix for Node < 22 not having native WebSocket
+import WebSocket from 'ws'
+
+if (typeof global.WebSocket === 'undefined') {
+  ;(global as any).WebSocket = WebSocket
+}
+
 let supabase: SupabaseClient | null = null
 
 /**

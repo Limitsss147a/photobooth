@@ -122,15 +122,19 @@ export default function CaptureSession({ config, sessionId, onCapture }: Props) 
         canvas.height = video.videoHeight || 1080
         const ctx = canvas.getContext('2d')
         if (ctx) {
+          ctx.save()
+          // Flip horizontally to match the mirrored video preview
+          ctx.translate(canvas.width, 0)
+          ctx.scale(-1, 1)
+          
           if (config.camera_rotation) {
-            ctx.save()
             ctx.translate(canvas.width / 2, canvas.height / 2)
             ctx.rotate((config.camera_rotation * Math.PI) / 180)
             ctx.drawImage(video, -canvas.width / 2, -canvas.height / 2)
-            ctx.restore()
           } else {
-            ctx.drawImage(video, 0, 0)
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
           }
+          ctx.restore()
           const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
           setCurrentPhoto(dataUrl)
         }
@@ -189,7 +193,7 @@ export default function CaptureSession({ config, sessionId, onCapture }: Props) 
             muted
             className={`w-full h-full object-cover ${state === 'review' ? 'hidden' : ''}`}
             style={{
-              transform: config.camera_rotation ? `rotate(${config.camera_rotation}deg)` : undefined
+              transform: `scaleX(-1) ${config.camera_rotation ? `rotate(${config.camera_rotation}deg)` : ''}`
             }}
           />
         )}
