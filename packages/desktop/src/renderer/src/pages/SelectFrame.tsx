@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ArrowRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ArrowRight, Loader2 } from 'lucide-react'
 import type { BoothConfig } from '@snapbooth/shared'
 
 interface Props {
@@ -14,69 +14,70 @@ interface FrameOption {
   extraPrice: number
   previewColor: string
   description: string
+  thumbnailUrl?: string
 }
 
-// Demo frames — in production these come from Supabase
-const DEMO_FRAMES: FrameOption[] = [
+const FALLBACK_FRAMES: FrameOption[] = [
   {
     id: 'classic-white',
     name: 'Classic White',
     category: 'Basic',
     extraPrice: 0,
     previewColor: '#ffffff',
-    description: 'Border putih simpel dan elegan'
-  },
-  {
-    id: 'polaroid',
-    name: 'Polaroid',
-    category: 'Basic',
-    extraPrice: 0,
-    previewColor: '#f5f5f0',
-    description: 'Gaya foto polaroid klasik'
-  },
-  {
-    id: 'floral-gold',
-    name: 'Floral Gold',
-    category: 'Premium',
-    extraPrice: 5000,
-    previewColor: '#d4af37',
-    description: 'Frame bunga dengan aksen emas'
-  },
-  {
-    id: 'neon-glow',
-    name: 'Neon Glow',
-    category: 'Premium',
-    extraPrice: 5000,
-    previewColor: '#ff00ff',
-    description: 'Efek neon futuristik'
-  },
-  {
-    id: 'vintage-film',
-    name: 'Vintage Film',
-    category: 'Artistic',
-    extraPrice: 3000,
-    previewColor: '#8B7355',
-    description: 'Tampilan strip film retro'
-  },
-  {
-    id: 'minimalist',
-    name: 'Minimalist',
-    category: 'Basic',
-    extraPrice: 0,
-    previewColor: '#1a1a2e',
-    description: 'Desain bersih dan modern'
+    description: 'Border putih simpel'
   }
 ]
 
 export default function SelectFrame({ config, onSelect }: Props) {
+  const [frames, setFrames] = useState<FrameOption[]>([])
+  const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string>('All')
 
-  const categories = ['All', ...new Set(DEMO_FRAMES.map(f => f.category))]
+  useEffect(() => {
+    loadFrames()
+  }, [])
+
+  const loadFrames = async () => {
+    try {
+      // @ts-ignore
+      const dbFrames = await window.snapbooth.config.frames()
+      if (dbFrames && dbFrames.length > 0) {
+        const mapped = dbFrames.map((f: any) => ({
+          id: f.id,
+          name: f.nama,
+          category: f.kategori,
+          extraPrice: f.harga_tambahan || 0,
+          previewColor: '#ffffff',
+          description: '',
+          thumbnailUrl: f.thumbnail_url || f.file_url
+        }))
+        setFrames(mapped)
+      } else {
+        setFrames(FALLBACK_FRAMES)
+      }
+    } catch (e) {
+      console.error('Failed to load frames:', e)
+      setFrames(FALLBACK_FRAMES)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const categories = ['All', ...new Set(frames.map(f => f.category))]
 
   const filteredFrames = activeCategory === 'All'
-    ? DEMO_FRAMES
-    : DEMO_FRAMES.filter(f => f.category === activeCategory)
+    ? frames
+    : frames.filter(f => f.category === activeCategory)
+
+  if (loading) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center text-white">
+        <Loader2 size={48} className="animate-spin text-indigo-400 mb-4" />
+        <h2 className="text-xl">Memuat desain frame...</h2>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: 'var(--gradient-surface)' }}>
@@ -114,14 +115,18 @@ export default function SelectFrame({ config, onSelect }: Props) {
               className={`frame-card ${selected === frame.id ? 'selected' : ''} animate-float-up`}
             >
               {/* Frame preview */}
-              <div className="aspect-[3/4] relative overflow-hidden">
+              <div className="aspect-[3/4] relative overflow-hidden flex items-center justify-center bg-[var(--color-bg-elevated)]">
+                {frame.thumbnailUrl ? (
+                  <img src={frame.thumbnailUrl} alt={frame.name} className="absolute inset-0 w-full h-full object-cover z-20 pointer-events-none" />
+                ) : (
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: frame.previewColor }}
+                  />
+                )}
+                {/* Simulated photo area (underneath transparent frame) */}
                 <div
-                  className="absolute inset-0"
-                  style={{ background: frame.previewColor }}
-                />
-                {/* Simulated photo area */}
-                <div
-                  className="absolute inset-[12%] rounded-lg"
+                  className="absolute inset-[12%] rounded-lg z-10"
                   style={{
                     background: 'var(--color-bg-deep)',
                     boxShadow: 'inset 0 0 20px rgba(0,0,0,0.3)'
@@ -133,16 +138,16 @@ export default function SelectFrame({ config, onSelect }: Props) {
                 </div>
                 {/* Extra price badge */}
                 {frame.extraPrice > 0 && (
-                  <div className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold bg-[var(--color-accent)] text-white">
+                  <div className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold bg-[var(--color-accent)] text-white z-30 shadow-md">
                     +Rp {frame.extraPrice.toLocaleString('id-ID')}
                   </div>
                 )}
               </div>
 
               {/* Info */}
-              <div className="p-4">
+              <div className="p-4 bg-[var(--color-bg-deep)]">
                 <h4 className="font-bold text-lg">{frame.name}</h4>
-                <p className="text-sm text-[var(--color-text-muted)] mt-1">{frame.description}</p>
+                {frame.description && <p className="text-sm text-[var(--color-text-muted)] mt-1">{frame.description}</p>}
                 <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)]">
                   {frame.category}
                 </span>

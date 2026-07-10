@@ -55,6 +55,7 @@ const snapboothApi = {
   // Config
   config: {
     get: () => ipcRenderer.invoke('config:get'),
+    frames: () => ipcRenderer.invoke('config:frames'),
     update: (config: Record<string, unknown>) => ipcRenderer.invoke('config:update', config)
   },
 

@@ -9,7 +9,7 @@ config({ path: resolve(__dirname, '../../../../.env') })
 // Services
 import { getMidtransService } from './payment/midtrans'
 import { sendPhotoEmail } from './email/resend'
-import { createSession, createTransaction, updateTransactionStatus, savePhoto, getDefaultOutlet, uploadPhotoToStorage } from './db/supabase'
+import { createSession, createTransaction, updateTransactionStatus, savePhoto, getDefaultOutlet, uploadPhotoToStorage, getFrameTemplates } from './db/supabase'
 import { saveBase64Photo, compositePhotos, getPhotosDir } from './compositing'
 import { printImage, getAvailablePrinters } from './printing'
 import { captureDSLRPhoto } from './camera/digicam'
@@ -85,6 +85,16 @@ function setupIpcHandlers(): void {
   // Config
   ipcMain.handle('config:get', async () => {
     return getDefaultConfig()
+  })
+
+  ipcMain.handle('config:frames', async () => {
+    try {
+      const outlet = await getDefaultOutlet()
+      return await getFrameTemplates(outlet?.id)
+    } catch (e) {
+      console.error('Failed to get frames:', e)
+      return []
+    }
   })
 
   // ============================================================
