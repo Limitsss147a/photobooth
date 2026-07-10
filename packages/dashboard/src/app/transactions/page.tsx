@@ -4,15 +4,15 @@ import TransactionsClient from "./TransactionsClient";
 export default async function TransactionsPage() {
   const supabase = getSupabase();
   
-  // Fetch transactions and join with sessions and devices if needed
+  // Fetch transactions
   const { data: transactions, error } = await supabase
     .from("transactions")
     .select(`
       id,
       session_id,
-      order_id,
+      payment_gateway_ref,
       jumlah,
-      tipe_pembayaran,
+      metode_bayar,
       status_bayar,
       created_at
     `)

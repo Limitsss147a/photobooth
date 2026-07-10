@@ -18,7 +18,7 @@ export default function TransactionsClient({ initialData }: { initialData: any[]
   const filteredData = useMemo(() => {
     return initialData.filter(tx => {
       const matchesSearch = 
-        (tx.order_id?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (tx.payment_gateway_ref?.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (tx.id?.toLowerCase().includes(searchTerm.toLowerCase()));
         
       const matchesStatus = statusFilter === "all" || tx.status_bayar?.toLowerCase() === statusFilter;
@@ -33,9 +33,9 @@ export default function TransactionsClient({ initialData }: { initialData: any[]
       headers.join(","),
       ...filteredData.map(tx => [
         new Date(tx.created_at).toLocaleString('id-ID'),
-        tx.order_id || tx.id,
+        tx.payment_gateway_ref || tx.id,
         tx.jumlah,
-        tx.tipe_pembayaran || 'Unknown',
+        tx.metode_bayar || 'Unknown',
         tx.status_bayar
       ].join(","))
     ].join("\n");
@@ -114,10 +114,10 @@ export default function TransactionsClient({ initialData }: { initialData: any[]
                       <div className="text-xs text-slate-500">{new Date(tx.created_at).toLocaleTimeString('id-ID')}</div>
                     </td>
                     <td className="px-6 py-4 font-mono text-xs text-slate-300">
-                      {tx.order_id || tx.id.substring(0, 13) + "..."}
+                      {tx.payment_gateway_ref || tx.id.substring(0, 13) + "..."}
                     </td>
                     <td className="px-6 py-4 uppercase">
-                      {tx.tipe_pembayaran ? tx.tipe_pembayaran.replace("_", " ") : "QRIS"}
+                      {tx.metode_bayar ? tx.metode_bayar.replace("_", " ") : "QRIS"}
                     </td>
                     <td className="px-6 py-4 text-right font-medium text-white">
                       {formatRupiah(tx.jumlah || 0)}
