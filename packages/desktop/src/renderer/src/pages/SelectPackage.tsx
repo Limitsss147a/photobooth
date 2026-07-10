@@ -37,7 +37,7 @@ export default function SelectPackage({ config, onSelect, onBack }: Props) {
     {
       id: 'standard',
       name: 'Standard',
-      price: config.base_price * 2,
+      price: config.standard_price || config.base_price * 2,
       prints: 2,
       photos: 3,
       features: ['3 foto', '2 cetak 4×6', 'Semua filter', 'Softfile via email', 'Pilih frame'],
@@ -48,7 +48,7 @@ export default function SelectPackage({ config, onSelect, onBack }: Props) {
     {
       id: 'premium',
       name: 'Premium',
-      price: config.base_price * 3,
+      price: config.premium_price || config.base_price * 3,
       prints: 4,
       photos: 5,
       features: ['5 foto', '4 cetak 4×6', 'Semua filter', 'Softfile via email & WA', 'Frame premium', 'Retake gratis'],

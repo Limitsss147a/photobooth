@@ -84,17 +84,23 @@ function setupIpcHandlers(): void {
 
   // Config
   ipcMain.handle('config:get', async () => {
-    const defaultConfig = getDefaultConfig()
     try {
+      // 1. Fetch remote config
       const remoteConfig = await getDeviceConfig()
-      if (remoteConfig && typeof remoteConfig === 'object') {
-        // Merge remote config overriding defaults
-        return { ...defaultConfig, ...remoteConfig }
-      }
-    } catch (e) {
-      console.error('Failed to get remote config, falling back to default:', e)
+      // 2. Merge with defaults
+      return { ...getDefaultConfig(), ...(remoteConfig || {}) }
+    } catch (error) {
+      console.error('[Config] Error fetching config:', error)
+      return getDefaultConfig()
     }
-    return defaultConfig
+  })
+
+  ipcMain.handle('config:update', async (_, configData) => {
+    // Since config is managed centrally in dashboard for now,
+    // this could just update local state or send back to Supabase if needed.
+    // We'll log it as implemented for local override scenarios.
+    console.log('[Config] Updating local config:', configData)
+    return { success: true }
   })
 
   ipcMain.handle('config:frames', async () => {
@@ -344,6 +350,8 @@ function getDefaultConfig() {
     camera_type: 'webcam',
     camera_rotation: 0,
     base_price: 10000,
+    standard_price: 20000,
+    premium_price: 30000,
     accept_cash: true,
     accept_qris: true,
     qris_timeout_seconds: 900,
@@ -352,6 +360,7 @@ function getDefaultConfig() {
     logo_url: null,
     theme_color: '#6366f1',
     attract_screen_text: 'Sentuh layar untuk mulai!',
+    attract_screen_subtitle: 'Create beautiful memories today',
     default_print_size: '4x6',
     copies_per_session: 1
   }

@@ -72,13 +72,41 @@ export default function SettingsClient({ deviceId, initialConfig }: { deviceId: 
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">Rp</span>
                 <input 
                   type="number" 
-                  name="basePrice"
-                  value={config.basePrice}
+                  name="base_price"
+                  value={config.base_price}
                   onChange={handleChange}
                   className="input-field pl-12" 
                 />
               </div>
               <p className="text-xs text-slate-500 mt-2">This is the starting price for the default 2-strip 4x6 print.</p>
+            </div>
+            
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-slate-300 mb-1">Standard Package Price (Rp)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">Rp</span>
+                <input 
+                  type="number" 
+                  name="standard_price"
+                  value={config.standard_price || config.base_price * 2}
+                  onChange={handleChange}
+                  className="input-field pl-12" 
+                />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-slate-300 mb-1">Premium Package Price (Rp)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">Rp</span>
+                <input 
+                  type="number" 
+                  name="premium_price"
+                  value={config.premium_price || config.base_price * 3}
+                  onChange={handleChange}
+                  className="input-field pl-12" 
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -97,8 +125,8 @@ export default function SettingsClient({ deviceId, initialConfig }: { deviceId: 
               <label className="block text-sm font-medium text-slate-300 mb-1">Main Headline</label>
               <input 
                 type="text" 
-                name="attractTitle"
-                value={config.attractTitle}
+                name="attract_screen_text"
+                value={config.attract_screen_text}
                 onChange={handleChange}
                 className="input-field" 
               />
@@ -107,8 +135,8 @@ export default function SettingsClient({ deviceId, initialConfig }: { deviceId: 
               <label className="block text-sm font-medium text-slate-300 mb-1">Subtitle</label>
               <input 
                 type="text" 
-                name="attractSubtitle"
-                value={config.attractSubtitle}
+                name="attract_screen_subtitle"
+                value={config.attract_screen_subtitle}
                 onChange={handleChange}
                 className="input-field" 
               />
@@ -120,12 +148,12 @@ export default function SettingsClient({ deviceId, initialConfig }: { deviceId: 
               <div className="flex items-center gap-3">
                 <input 
                   type="color" 
-                  name="themeColor"
-                  value={config.themeColor}
+                  name="theme_color"
+                  value={config.theme_color}
                   onChange={handleChange}
                   className="h-10 w-20 rounded bg-slate-900 border border-white/10 cursor-pointer" 
                 />
-                <span className="text-slate-400 font-mono text-sm">{config.themeColor}</span>
+                <span className="text-slate-400 font-mono text-sm">{config.theme_color}</span>
               </div>
             </div>
           </div>
@@ -145,8 +173,8 @@ export default function SettingsClient({ deviceId, initialConfig }: { deviceId: 
               <label className="block text-sm font-medium text-slate-300 mb-1">Camera Countdown (Seconds)</label>
               <input 
                 type="number" 
-                name="countdownSeconds"
-                value={config.countdownSeconds}
+                name="countdown_seconds"
+                value={config.countdown_seconds}
                 onChange={handleChange}
                 min={3}
                 max={15}
@@ -182,21 +210,21 @@ export default function SettingsClient({ deviceId, initialConfig }: { deviceId: 
             <div 
               className="absolute top-0 left-0 right-0 h-40 opacity-20"
               style={{ 
-                background: `linear-gradient(to bottom, ${config.themeColor}, transparent)` 
+                background: `linear-gradient(to bottom, ${config.theme_color}, transparent)` 
               }}
             />
 
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center z-10">
               <h1 className="text-3xl font-black text-white mb-2 leading-tight">
-                {config.attractTitle}
+                {config.attract_screen_text}
               </h1>
               <p className="text-slate-300 text-sm mb-12">
-                {config.attractSubtitle}
+                {config.attract_screen_subtitle}
               </p>
               
               <div 
                 className="w-24 h-24 rounded-full flex items-center justify-center shadow-xl animate-pulse"
-                style={{ backgroundColor: config.themeColor }}
+                style={{ backgroundColor: config.theme_color }}
               >
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
                   <span className="text-xs font-bold text-slate-900">TAP</span>
@@ -206,7 +234,7 @@ export default function SettingsClient({ deviceId, initialConfig }: { deviceId: 
 
             <div className="bg-slate-950 p-4 text-center border-t border-white/5">
               <span className="text-xs font-medium text-slate-500">
-                Starting from Rp {config.basePrice.toLocaleString('id-ID')}
+                Starting from Rp {config.base_price?.toLocaleString('id-ID')}
               </span>
             </div>
           </div>

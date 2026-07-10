@@ -123,17 +123,16 @@ export default function CaptureSession({ config, sessionId, onCapture }: Props) 
         const ctx = canvas.getContext('2d')
         if (ctx) {
           ctx.save()
+          // Move to center
+          ctx.translate(canvas.width / 2, canvas.height / 2)
           // Flip horizontally to match the mirrored video preview
-          ctx.translate(canvas.width, 0)
           ctx.scale(-1, 1)
           
           if (config.camera_rotation) {
-            ctx.translate(canvas.width / 2, canvas.height / 2)
             ctx.rotate((config.camera_rotation * Math.PI) / 180)
-            ctx.drawImage(video, -canvas.width / 2, -canvas.height / 2)
-          } else {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
           }
+          
+          ctx.drawImage(video, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height)
           ctx.restore()
           const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
           setCurrentPhoto(dataUrl)

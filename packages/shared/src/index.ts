@@ -152,6 +152,8 @@ export interface BoothConfig {
 
   // Payment
   base_price: number;
+  standard_price?: number;
+  premium_price?: number;
   accept_cash: boolean;
   accept_qris: boolean;
   qris_timeout_seconds: number;
@@ -164,6 +166,7 @@ export interface BoothConfig {
   logo_url: string | null;
   theme_color: string;
   attract_screen_text: string;
+  attract_screen_subtitle?: string;
 
   // Print
   default_print_size: PrintSize;

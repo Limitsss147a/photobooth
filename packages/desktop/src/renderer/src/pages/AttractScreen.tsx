@@ -81,7 +81,7 @@ export default function AttractScreen({ config, onStart }: Props) {
 
         {/* Tagline */}
         <p className="text-2xl text-[var(--color-text-secondary)] mb-16 font-light">
-          Self-Service Photo Experience
+          {config.attract_screen_subtitle || 'Self-Service Photo Experience'}
         </p>
 
         {/* CTA */}

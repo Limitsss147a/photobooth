@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import AttractScreen from './pages/AttractScreen'
 import SelectPackage from './pages/SelectPackage'
 import Payment from './pages/Payment'
@@ -33,7 +33,7 @@ interface SessionData {
 }
 
 const initialSessionData: SessionData = {
-  id: `session_${Date.now()}`,
+  id: crypto.randomUUID(),
   packagePrice: 0,
   paymentMethod: null,
   orderId: null,
@@ -48,11 +48,25 @@ export default function App() {
   const [stage, setStage] = useState<AppStage>('attract')
   const [config, setConfig] = useState<BoothConfig | null>(null)
   const [session, setSession] = useState<SessionData>(initialSessionData)
-  const [idleTimer, setIdleTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Load config on startup
+  // Load config on startup and start polling
   useEffect(() => {
     loadConfig()
+    
+    const configInterval = setInterval(async () => {
+      try {
+        // @ts-ignore
+        const cfg = await window.snapbooth?.config?.get()
+        if (cfg) {
+          setConfig(cfg)
+        }
+      } catch (err) {
+        console.error('Failed to poll config:', err)
+      }
+    }, 15000) // Poll every 15 seconds
+    
+    return () => clearInterval(configInterval)
   }, [])
 
   const loadConfig = async () => {
@@ -91,27 +105,26 @@ export default function App() {
 
   // Reset idle timer on any interaction
   const resetIdleTimer = useCallback(() => {
-    if (idleTimer) clearTimeout(idleTimer)
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
     if (stage !== 'attract' && config) {
-      const timer = setTimeout(() => {
+      idleTimerRef.current = setTimeout(() => {
         // Return to attract screen after idle
         resetSession()
       }, config.session_timeout_seconds * 1000)
-      setIdleTimer(timer)
     }
-  }, [stage, config, idleTimer])
+  }, [stage, config])
 
   useEffect(() => {
     resetIdleTimer()
     return () => {
-      if (idleTimer) clearTimeout(idleTimer)
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
     }
   }, [stage])
 
   const resetSession = () => {
     setSession({
       ...initialSessionData,
-      id: `session_${Date.now()}` // Generate new ID on reset
+      id: crypto.randomUUID() // Generate new UUID on reset
     })
     setStage('attract')
   }
@@ -141,7 +154,19 @@ export default function App() {
         {stage === 'attract' && (
           <AttractScreen
             config={config}
-            onStart={() => setStage('select-package')}
+            onStart={async () => {
+              // 1. Create session in DB
+              try {
+                // @ts-ignore
+                const dbSession = await window.snapbooth?.db?.createSession(null)
+                if (dbSession && dbSession.id) {
+                  updateSession({ id: dbSession.id })
+                }
+              } catch (err) {
+                console.error('Failed to create DB session:', err)
+              }
+              setStage('select-package')
+            }}
           />
         )}
 

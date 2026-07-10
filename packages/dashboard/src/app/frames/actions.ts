@@ -39,10 +39,17 @@ export async function addFrameAction(formData: FormData) {
       .from("photos")
       .getPublicUrl(filePath);
 
+    let outletId = null;
+    const { data: outlet } = await supabase.from("outlets").select("id").limit(1).single();
+    if (outlet) {
+      outletId = outlet.id;
+    }
+
     // 2. Insert into database
     const { error: dbError } = await supabase
       .from("frame_templates")
       .insert({
+        outlet_id: outletId,
         nama: name,
         kategori: category,
         harga_tambahan: price,

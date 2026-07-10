@@ -22,11 +22,13 @@ export default async function SettingsPage() {
 
     if (outlet) {
       const defaultConfig = {
-        basePrice: 35000,
-        attractTitle: "Tap Anywhere to Start",
-        attractSubtitle: "Create beautiful memories today",
-        countdownSeconds: 5,
-        themeColor: "#6366f1"
+        base_price: 35000,
+        standard_price: 70000,
+        premium_price: 105000,
+        attract_screen_text: "Tap Anywhere to Start",
+        attract_screen_subtitle: "Create beautiful memories today",
+        countdown_seconds: 5,
+        theme_color: "#6366f1"
       };
 
       const { data: newDevice } = await supabase
@@ -45,11 +47,13 @@ export default async function SettingsPage() {
 
   // Ekstrak config, kasih fallback jika kosong
   const config = device?.config || {
-    basePrice: 35000,
-    attractTitle: "Tap Anywhere to Start",
-    attractSubtitle: "Create beautiful memories today",
-    countdownSeconds: 5,
-    themeColor: "#6366f1"
+    base_price: 35000,
+    standard_price: 70000,
+    premium_price: 105000,
+    attract_screen_text: "Tap Anywhere to Start",
+    attract_screen_subtitle: "Create beautiful memories today",
+    countdown_seconds: 5,
+    theme_color: "#6366f1"
   };
 
   return (
