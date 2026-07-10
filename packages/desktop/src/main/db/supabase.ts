@@ -8,10 +8,14 @@ import crypto from 'crypto'
 config({ path: resolve(__dirname, '../../../../.env') })
 
 // Fix for Node < 22 not having native WebSocket
-import WebSocket from 'ws'
+// Supabase instantiates RealtimeClient which checks for WebSocket.
+// Since we don't use Realtime in the main process, we can just provide a dummy class.
+class DummyWebSocket {
+  constructor() {}
+}
 
 if (typeof global.WebSocket === 'undefined') {
-  ;(global as any).WebSocket = WebSocket
+  ;(global as any).WebSocket = DummyWebSocket
 }
 
 let supabase: SupabaseClient | null = null

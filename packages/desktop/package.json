@@ -15,14 +15,12 @@
     "@img/sharp-win32-x64": "^0.35.3",
     "@snapbooth/shared": "workspace:*",
     "@supabase/supabase-js": "^2.110.0",
-    "@types/ws": "^8.18.1",
     "better-sqlite3": "^11.0.0",
     "dotenv": "^17.4.2",
     "midtrans-client": "^1.4.3",
     "resend": "^6.17.1",
     "sharp": "^0.35.3",
-    "uuid": "^10.0.0",
-    "ws": "^8.21.0"
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.0",
