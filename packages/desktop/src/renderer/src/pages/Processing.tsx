@@ -150,38 +150,38 @@ export default function Processing({ session, config, onComplete }: Props) {
       <div className="text-center max-w-lg animate-fade-in">
         <div className="mb-10">
           {step === 'error' ? (
-            <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center animate-scale-in" style={{ background: 'linear-gradient(135deg, #ef4444, #f87171)' }}>
+            <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center animate-scale-in" style={{ background: 'linear-gradient(135deg, #93000a, #ffb4ab)', boxShadow: '0 0 30px rgba(255,180,171,0.3)' }}>
               <AlertCircle size={64} color="white" />
             </div>
           ) : step === 'done' ? (
-            <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center animate-scale-in" style={{ background: 'linear-gradient(135deg, #22c55e, #34d399)' }}>
-              <CheckCircle size={64} color="white" />
+            <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center animate-scale-in" style={{ background: 'var(--gradient-tertiary)', boxShadow: 'var(--shadow-glow-tertiary)' }}>
+              <CheckCircle size={64} color="#003915" />
             </div>
           ) : (
-            <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)', boxShadow: 'var(--shadow-glow)' }}>
+            <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)', boxShadow: 'var(--shadow-glow-primary)' }}>
               {step === 'printing' ? (
-                <Printer size={64} color="white" className="animate-pulse" />
+                <Printer size={64} color="#00363a" className="animate-pulse" />
               ) : step === 'saving' ? (
-                <ImageIcon size={64} color="white" className="animate-pulse" />
+                <ImageIcon size={64} color="#00363a" className="animate-pulse" />
               ) : (
-                <Loader2 size={64} color="white" className="animate-spin" />
+                <Loader2 size={64} color="#00363a" className="animate-spin" />
               )}
             </div>
           )}
         </div>
 
-        <h2 className="text-3xl font-bold mb-2">{current.title}</h2>
-        <p className="text-[var(--color-text-secondary)] text-lg mb-8">{current.subtitle}</p>
+        <h2 className="text-headline-md mb-2">{current.title}</h2>
+        <p className="text-body-md mb-8" style={{ color: 'var(--color-text-secondary)' }}>{current.subtitle}</p>
 
         {step !== 'done' && step !== 'error' && (
           <div className="w-full max-w-md mx-auto">
-            <div className="h-3 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
+            <div className="progress-bar-container">
               <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{ width: `${progress}%`, background: 'var(--gradient-primary)' }}
+                className="progress-bar-fill"
+                style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-[var(--color-text-muted)] text-sm mt-3">{progress}%</p>
+            <p className="text-label-bold text-sm mt-3" style={{ color: 'var(--color-text-muted)' }}>{progress}%</p>
           </div>
         )}
 
@@ -193,14 +193,18 @@ export default function Processing({ session, config, onComplete }: Props) {
               const isDone = ['saving', 'compositing', 'printing', 'done'].indexOf(step) > ['saving', 'compositing', 'printing'].indexOf(s)
               return (
                 <div key={s} className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                    isDone ? 'bg-green-500 text-white' :
-                    isActive ? 'bg-[var(--color-primary)] text-white scale-110' :
-                    'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)]'
-                  }`}>
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-label-bold text-sm transition-all"
+                    style={{
+                      background: isDone ? 'var(--color-tertiary-container)' : isActive ? 'var(--color-primary-container)' : 'var(--color-bg-elevated)',
+                      color: isDone ? '#003915' : isActive ? '#00363a' : 'var(--color-text-muted)',
+                      transform: isActive ? 'scale(1.1)' : undefined,
+                      boxShadow: isActive ? 'var(--shadow-glow-primary)' : isDone ? 'var(--shadow-glow-tertiary)' : undefined
+                    }}
+                  >
                     {isDone ? '✓' : i + 1}
                   </div>
-                  <span className={`text-sm ${isActive ? 'text-[var(--color-text)] font-medium' : 'text-[var(--color-text-muted)]'}`}>
+                  <span className="text-label-bold text-sm" style={{ color: isActive ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
                     {s === 'saving' ? 'Simpan' : s === 'compositing' ? 'Proses' : 'Cetak'}
                   </span>
                 </div>

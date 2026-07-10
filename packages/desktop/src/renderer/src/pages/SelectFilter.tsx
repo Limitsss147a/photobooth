@@ -39,16 +39,25 @@ export default function SelectFilter({ config, photos, onSelect }: Props) {
   return (
     <div className="w-full h-full flex flex-col" style={{ background: 'var(--gradient-surface)' }}>
       {/* Header */}
-      <div className="text-center pt-6 pb-4">
-        <h2 className="text-3xl font-bold">Pilih Filter</h2>
-        <p className="text-[var(--color-text-secondary)] mt-1">Sentuh filter untuk melihat preview</p>
+      <div className="text-center pt-8 pb-4">
+        <h2 className="text-headline-md">Pilih Filter</h2>
+        <p className="text-body-md mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+          Sentuh filter untuk melihat preview
+        </p>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex gap-8 px-8 pb-8 min-h-0">
+      <div className="flex-1 flex gap-8 px-16 pb-8 min-h-0">
         {/* Photo preview (large) */}
         <div className="flex-1 flex items-center justify-center">
-          <div className="relative w-full max-w-[600px] aspect-[3/4] rounded-[24px] overflow-hidden shadow-2xl">
+          <div
+            className="relative w-full max-w-[600px] aspect-[3/4] overflow-hidden"
+            style={{
+              borderRadius: 'var(--radius-xl)',
+              boxShadow: 'var(--shadow-glow-primary)',
+              border: '2px solid var(--color-border)'
+            }}
+          >
             {previewPhoto ? (
               <img
                 src={previewPhoto}
@@ -57,14 +66,17 @@ export default function SelectFilter({ config, photos, onSelect }: Props) {
                 style={{ filter: currentFilter.cssFilter }}
               />
             ) : (
-              <div className="w-full h-full bg-[var(--color-bg-card)] flex items-center justify-center">
-                <p className="text-[var(--color-text-muted)]">No preview</p>
+              <div className="w-full h-full flex items-center justify-center" style={{ background: 'var(--color-bg-card)' }}>
+                <p style={{ color: 'var(--color-text-muted)' }}>No preview</p>
               </div>
             )}
 
             {/* Filter name badge */}
-            <div className="absolute bottom-4 left-4 glass-card px-4 py-2">
-              <span className="font-bold text-lg">{currentFilter.emoji} {currentFilter.name}</span>
+            <div
+              className="absolute bottom-4 left-4 glass-panel px-4 py-2"
+              style={{ borderRadius: 'var(--radius-full)' }}
+            >
+              <span className="text-label-bold text-lg">{currentFilter.emoji} {currentFilter.name}</span>
             </div>
           </div>
         </div>
@@ -88,22 +100,22 @@ export default function SelectFilter({ config, photos, onSelect }: Props) {
                       style={{ filter: filter.cssFilter }}
                     />
                   ) : (
-                    <div className="w-full h-full bg-[var(--color-bg-elevated)]" />
+                    <div className="w-full h-full" style={{ background: 'var(--color-bg-elevated)' }} />
                   )}
                 </div>
                 <div className="py-2 px-1 text-center">
-                  <span className="text-sm font-medium">{filter.emoji} {filter.name}</span>
+                  <span className="text-label-bold text-sm">{filter.emoji} {filter.name}</span>
                 </div>
               </button>
             ))}
           </div>
 
-          {/* Confirm button */}
+          {/* Apply button */}
           <button
+            className="btn-primary w-full mt-4"
             onClick={() => onSelect(selected)}
-            className="btn-primary btn-touch w-full mt-4"
           >
-            Gunakan Filter Ini →
+            Terapkan Filter →
           </button>
         </div>
       </div>

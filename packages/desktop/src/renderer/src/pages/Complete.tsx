@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Mail, PartyPopper, RotateCcw } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import type { BoothConfig } from '@snapbooth/shared'
 
 interface SessionData {
@@ -53,32 +53,64 @@ export default function Complete({ session, config, onFinish }: Props) {
   }
 
   return (
-    <div className="w-full h-full flex items-center justify-center" style={{ background: 'var(--gradient-surface)' }}>
-      <div className="text-center max-w-2xl animate-scale-in">
-        <div className="text-8xl mb-6">🎉</div>
-        <h2 className="text-4xl font-black mb-3" style={{
-          background: 'var(--gradient-primary)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        }}>
+    <div className="w-full h-full flex flex-col items-center justify-center relative" style={{ background: 'var(--gradient-surface)' }}>
+      {/* Background glow orbs */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div
+          className="absolute w-[500px] h-[500px] rounded-full opacity-20"
+          style={{
+            top: '-10%',
+            left: '30%',
+            background: 'radial-gradient(circle, rgba(38,249,121,0.5) 0%, transparent 70%)',
+            filter: 'blur(60px)'
+          }}
+        />
+        <div
+          className="absolute w-[400px] h-[400px] rounded-full opacity-15"
+          style={{
+            bottom: '10%',
+            right: '20%',
+            background: 'radial-gradient(circle, rgba(0,240,255,0.4) 0%, transparent 70%)',
+            filter: 'blur(60px)'
+          }}
+        />
+      </div>
+
+      <div className="text-center max-w-2xl z-10 animate-scale-in px-8">
+        {/* Success icon with glow */}
+        <div
+          className="text-8xl mb-6 animate-neon-glow inline-block"
+          style={{ filter: 'drop-shadow(0 0 20px rgba(38,249,121,0.5))' }}
+        >
+          🎉
+        </div>
+
+        <h2
+          className="text-headline-lg mb-3"
+          style={{
+            color: 'var(--color-tertiary)',
+            filter: 'drop-shadow(0 0 15px rgba(38,249,121,0.4))'
+          }}
+        >
           Foto Sudah Siap!
         </h2>
-        <p className="text-xl text-[var(--color-text-secondary)] mb-10">
+
+        <p className="text-body-lg mb-10" style={{ color: 'var(--color-text-secondary)' }}>
           Ambil hasil cetak di bawah dan masukkan email untuk menerima softfile
         </p>
 
         {!emailSent ? (
-          <div className="glass-card p-8 max-w-md mx-auto mb-8">
+          <div className="glass-panel p-8 max-w-md mx-auto mb-8">
             <div className="flex items-center gap-3 mb-4">
-              <Mail size={24} className="text-[var(--color-primary-light)]" />
-              <h3 className="text-lg font-bold">Kirim ke Email</h3>
+              <span className="text-2xl">📧</span>
+              <h3 className="text-label-bold text-lg">Kirim ke Email</h3>
             </div>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="nama@email.com"
-              className="w-full px-5 py-4 text-lg rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:outline-none mb-4"
+              className="input-field mb-4 text-lg"
             />
             <button
               onClick={handleSendEmail}
@@ -88,24 +120,27 @@ export default function Complete({ session, config, onFinish }: Props) {
               {sending ? 'Mengirim...' : 'Kirim Softfile 📧'}
             </button>
             {emailError && (
-              <p className="text-[var(--color-error)] text-sm mt-3">{emailError}</p>
+              <p className="text-sm mt-3" style={{ color: 'var(--color-error)' }}>{emailError}</p>
             )}
           </div>
         ) : (
-          <div className="glass-card p-6 max-w-md mx-auto mb-8 border-[var(--color-success)]">
-            <p className="text-[var(--color-success)] font-bold text-lg">
+          <div
+            className="glass-panel p-6 max-w-md mx-auto mb-8"
+            style={{ border: '2px solid var(--color-success)' }}
+          >
+            <p className="text-label-bold text-lg" style={{ color: 'var(--color-success)' }}>
               ✅ Email terkirim ke {email}
             </p>
           </div>
         )}
 
-        <button onClick={onFinish} className="btn-secondary btn-touch mt-4">
+        <button onClick={onFinish} className="btn-accent btn-touch mt-4">
           <RotateCcw size={20} />
           Selesai
         </button>
 
-        <p className="text-[var(--color-text-muted)] text-sm mt-8">
-          Terima kasih sudah menggunakan {config.outlet_name}! 📸
+        <p className="text-sm mt-8" style={{ color: 'var(--color-text-muted)' }}>
+          Terima kasih sudah menggunakan {config.outlet_name || 'SnapBooth'}! 📸
         </p>
       </div>
     </div>

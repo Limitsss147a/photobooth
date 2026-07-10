@@ -46,14 +46,19 @@ export default async function SettingsPage() {
   }
 
   // Ekstrak config, kasih fallback jika kosong
-  const config = device?.config || {
-    base_price: 35000,
-    standard_price: 70000,
-    premium_price: 105000,
-    attract_screen_text: "Tap Anywhere to Start",
-    attract_screen_subtitle: "Create beautiful memories today",
-    countdown_seconds: 5,
-    theme_color: "#6366f1"
+  const rawConfig = device?.config || {};
+  
+  // Normalize config to snake_case for backward compatibility with old saves
+  const basePrice = rawConfig.base_price ?? rawConfig.basePrice ?? 35000;
+  const config = {
+    ...rawConfig,
+    base_price: basePrice,
+    standard_price: rawConfig.standard_price ?? basePrice * 2,
+    premium_price: rawConfig.premium_price ?? basePrice * 3,
+    attract_screen_text: rawConfig.attract_screen_text ?? rawConfig.attractTitle ?? "Tap Anywhere to Start",
+    attract_screen_subtitle: rawConfig.attract_screen_subtitle ?? rawConfig.attractSubtitle ?? "Create beautiful memories today",
+    countdown_seconds: rawConfig.countdown_seconds ?? rawConfig.countdownSeconds ?? 5,
+    theme_color: rawConfig.theme_color ?? rawConfig.themeColor ?? "#6366f1"
   };
 
   return (

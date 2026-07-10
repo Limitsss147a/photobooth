@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, Printer, Image, Sparkles } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import type { BoothConfig } from '@snapbooth/shared'
 
 interface Props {
@@ -15,9 +15,10 @@ interface Package {
   prints: number
   photos: number
   features: string[]
-  icon: React.ReactNode
+  emoji: string
   popular?: boolean
-  gradient: string
+  glowColor: string
+  borderColor: string
 }
 
 export default function SelectPackage({ config, onSelect, onBack }: Props) {
@@ -31,8 +32,9 @@ export default function SelectPackage({ config, onSelect, onBack }: Props) {
       prints: 1,
       photos: 1,
       features: ['1 foto', '1 cetak 4×6', 'Filter dasar', 'Softfile via email'],
-      icon: <Image size={32} />,
-      gradient: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)'
+      emoji: '📷',
+      glowColor: 'rgba(0, 219, 233, 0.3)',
+      borderColor: '#00dbe9'
     },
     {
       id: 'standard',
@@ -41,9 +43,10 @@ export default function SelectPackage({ config, onSelect, onBack }: Props) {
       prints: 2,
       photos: 3,
       features: ['3 foto', '2 cetak 4×6', 'Semua filter', 'Softfile via email', 'Pilih frame'],
-      icon: <Printer size={32} />,
+      emoji: '✨',
       popular: true,
-      gradient: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)'
+      glowColor: 'rgba(255, 36, 228, 0.3)',
+      borderColor: '#ff24e4'
     },
     {
       id: 'premium',
@@ -52,46 +55,57 @@ export default function SelectPackage({ config, onSelect, onBack }: Props) {
       prints: 4,
       photos: 5,
       features: ['5 foto', '4 cetak 4×6', 'Semua filter', 'Softfile via email & WA', 'Frame premium', 'Retake gratis'],
-      icon: <Sparkles size={32} />,
-      gradient: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)'
+      emoji: '👑',
+      glowColor: 'rgba(38, 249, 121, 0.3)',
+      borderColor: '#26f979'
     }
   ]
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: 'var(--gradient-surface)' }}>
       {/* Header */}
-      <div className="flex items-center px-8 pt-8 pb-4">
-        <button onClick={onBack} className="btn-secondary p-4 rounded-full">
+      <div className="flex items-center px-16 pt-10 pb-4">
+        <button
+          onClick={onBack}
+          className="btn-secondary p-4"
+          style={{ borderRadius: 'var(--radius-full)', border: '2px solid var(--color-border)' }}
+        >
           <ArrowLeft size={24} />
         </button>
         <div className="flex-1 text-center">
-          <h2 className="text-3xl font-bold">Pilih Paket Foto</h2>
-          <p className="text-[var(--color-text-secondary)] mt-1">Pilih paket yang sesuai keinginanmu</p>
+          <h2 className="text-headline-md">Pilih Paket Foto</h2>
+          <p className="text-body-md mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+            Pilih paket yang sesuai keinginanmu
+          </p>
         </div>
-        <div className="w-14" /> {/* Spacer */}
+        <div className="w-14" />
       </div>
 
       {/* Package cards */}
-      <div className="flex-1 flex items-center justify-center gap-8 px-12 pb-8">
+      <div className="flex-1 flex items-center justify-center gap-8 px-16 pb-10">
         {packages.map((pkg, index) => (
           <div
             key={pkg.id}
-            className={`relative flex-1 max-w-[380px] rounded-[24px] overflow-hidden cursor-pointer transition-all duration-300
-              ${selected === pkg.id ? 'scale-105 ring-4 ring-[var(--color-primary)]' : 'hover:scale-102'}
-            `}
+            className="relative flex-1 max-w-[400px] overflow-hidden cursor-pointer transition-all duration-300 animate-float-up"
             style={{
               background: 'var(--color-bg-card)',
-              border: selected === pkg.id ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
-              boxShadow: selected === pkg.id ? 'var(--shadow-glow)' : 'var(--shadow-md)',
-              animationDelay: `${index * 100}ms`
+              border: selected === pkg.id ? `3px solid ${pkg.borderColor}` : '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-xl)',
+              boxShadow: selected === pkg.id ? `0 0 30px ${pkg.glowColor}` : 'var(--shadow-md)',
+              animationDelay: `${index * 100}ms`,
+              transform: selected === pkg.id ? 'scale(1.03)' : undefined
             }}
             onClick={() => setSelected(pkg.id)}
           >
             {/* Popular badge */}
             {pkg.popular && (
               <div
-                className="absolute top-4 right-4 px-4 py-1.5 rounded-full text-sm font-bold text-white"
-                style={{ background: 'var(--gradient-accent)' }}
+                className="absolute top-4 right-4 px-4 py-1.5 rounded-full text-label-bold text-sm z-10"
+                style={{
+                  background: 'var(--color-secondary-container)',
+                  color: 'white',
+                  boxShadow: 'var(--shadow-glow-accent)'
+                }}
               >
                 ⭐ Populer
               </div>
@@ -99,36 +113,51 @@ export default function SelectPackage({ config, onSelect, onBack }: Props) {
 
             {/* Icon header */}
             <div
-              className="p-8 flex items-center justify-center"
-              style={{ background: pkg.gradient }}
+              className="p-10 flex items-center justify-center"
+              style={{
+                background: `linear-gradient(135deg, ${pkg.borderColor}33, ${pkg.borderColor}11)`
+              }}
             >
-              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-white">
-                {pkg.icon}
+              <div
+                className="w-24 h-24 rounded-full flex items-center justify-center text-5xl"
+                style={{
+                  background: `${pkg.borderColor}22`,
+                  border: `2px solid ${pkg.borderColor}44`,
+                  boxShadow: `0 0 20px ${pkg.glowColor}`
+                }}
+              >
+                {pkg.emoji}
               </div>
             </div>
 
             {/* Content */}
             <div className="p-8">
-              <h3 className="text-2xl font-bold mb-2">{pkg.name}</h3>
-              <p className="text-4xl font-black mb-6" style={{ color: 'var(--color-primary-light)' }}>
+              <h3 className="text-headline-md mb-2">{pkg.name}</h3>
+              <p className="text-body-lg font-bold mb-6" style={{ color: pkg.borderColor }}>
                 Rp {pkg.price.toLocaleString('id-ID')}
               </p>
 
               <ul className="space-y-3 mb-8">
                 {pkg.features.map((feat, i) => (
-                  <li key={i} className="flex items-center gap-3 text-[var(--color-text-secondary)]">
-                    <span className="w-5 h-5 rounded-full bg-[var(--color-primary)]/20 flex items-center justify-center text-xs text-[var(--color-primary-light)]">✓</span>
-                    {feat}
+                  <li key={i} className="flex items-center gap-3" style={{ color: 'var(--color-text-secondary)' }}>
+                    <span
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                      style={{ background: `${pkg.borderColor}22`, color: pkg.borderColor }}
+                    >
+                      ✓
+                    </span>
+                    <span className="text-body-md">{feat}</span>
                   </li>
                 ))}
               </ul>
 
               <button
-                className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
+                className={selected === pkg.id ? 'btn-primary w-full' : 'btn-secondary w-full'}
+                style={
                   selected === pkg.id
-                    ? 'btn-primary'
-                    : 'bg-[var(--color-bg-elevated)] text-[var(--color-text)] border border-[var(--color-border)]'
-                }`}
+                    ? { background: pkg.borderColor, color: '#0f131f' }
+                    : { borderColor: pkg.borderColor }
+                }
                 onClick={(e) => {
                   e.stopPropagation()
                   onSelect(pkg.price)

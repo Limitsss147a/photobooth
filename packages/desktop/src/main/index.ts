@@ -350,8 +350,6 @@ function getDefaultConfig() {
     camera_type: 'webcam',
     camera_rotation: 0,
     base_price: 10000,
-    standard_price: 20000,
-    premium_price: 30000,
     accept_cash: true,
     accept_qris: true,
     qris_timeout_seconds: 900,

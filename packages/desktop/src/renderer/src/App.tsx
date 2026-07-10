@@ -135,10 +135,17 @@ export default function App() {
 
   if (!config) {
     return (
-      <div className="flex items-center justify-center w-full h-full">
+      <div className="flex items-center justify-center w-full h-full" style={{ background: 'var(--color-bg)' }}>
         <div className="text-center animate-fade-in">
-          <div className="w-16 h-16 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[var(--color-text-secondary)] text-lg">Memuat SnapBooth...</p>
+          <div
+            className="w-16 h-16 rounded-full animate-spin mx-auto mb-6"
+            style={{
+              border: '4px solid var(--color-bg-elevated)',
+              borderTopColor: 'var(--color-primary-container)',
+              boxShadow: 'var(--shadow-glow-primary)'
+            }}
+          />
+          <p className="text-body-md" style={{ color: 'var(--color-text-secondary)' }}>Memuat SnapBooth...</p>
         </div>
       </div>
     )

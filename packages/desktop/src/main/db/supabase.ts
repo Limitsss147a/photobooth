@@ -175,7 +175,7 @@ export async function getFrameTemplates(outletId?: string) {
     .order('created_at', { ascending: false })
 
   if (outletId) {
-    query = query.eq('outlet_id', outletId)
+    query = query.or(`outlet_id.eq.${outletId},outlet_id.is.null`)
   }
 
   const { data, error } = await query
