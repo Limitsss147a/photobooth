@@ -117,155 +117,174 @@ export async function compositePhotos(options: {
   const dir = getSessionDir(sessionId)
   const outputPath = join(dir, 'final_composite.jpg')
 
-  // Output dimensions (300dpi)
-  const is4x6 = printSize === '4x6'
-  const outputWidth = is4x6 ? 1800 : 600   // 4x6 = 1800x1200, 2x6 = 600x1800
-  const outputHeight = is4x6 ? 1200 : 1800
+  // Fetch frame from DB
+  const { getFrameTemplates } = await import('../db/supabase')
+  const frames = await getFrameTemplates()
+  const dbFrame = frames.find(f => f.id === frameId)
+  const hasDbLayout = dbFrame && dbFrame.layout_config && dbFrame.file_url
 
-  // Frame border colors based on frameId
-  const frameColors: Record<string, { bg: string; border: string }> = {
-    'classic-white': { bg: '#ffffff', border: '#e0e0e0' },
-    'polaroid': { bg: '#f5f5f0', border: '#d0d0c8' },
-    'floral-gold': { bg: '#faf3e0', border: '#d4af37' },
-    'neon-glow': { bg: '#0a0a1a', border: '#ff00ff' },
-    'vintage-film': { bg: '#2a2118', border: '#8B7355' },
-    'minimalist': { bg: '#1a1a2e', border: '#333355' }
-  }
-
-  const frame = frameColors[frameId] || frameColors['classic-white']
-
-  // Parse hex colors to RGB
-  const parseHex = (hex: string) => ({
-    r: parseInt(hex.slice(1, 3), 16),
-    g: parseInt(hex.slice(3, 5), 16),
-    b: parseInt(hex.slice(5, 7), 16)
-  })
-
-  const bgColor = parseHex(frame.bg)
-  const borderColor = parseHex(frame.border)
-
-  // Calculate photo placement
-  const photoCount = photoPaths.length
-  const borderWidth = Math.round(outputWidth * 0.04) // 4% border
-  const gap = Math.round(outputWidth * 0.02) // 2% gap between photos
-  const bottomExtraSpace = Math.round(outputHeight * 0.08) // Extra space at bottom for branding
-
-  let photoRegions: Array<{ x: number; y: number; w: number; h: number }> = []
-
-  if (photoCount === 1) {
-    // Single photo — centered with border
-    photoRegions = [{
-      x: borderWidth,
-      y: borderWidth,
-      w: outputWidth - borderWidth * 2,
-      h: outputHeight - borderWidth * 2 - bottomExtraSpace
-    }]
-  } else if (photoCount === 2) {
-    // 2 photos stacked
-    const photoH = Math.round((outputHeight - borderWidth * 2 - gap - bottomExtraSpace) / 2)
-    photoRegions = [
-      { x: borderWidth, y: borderWidth, w: outputWidth - borderWidth * 2, h: photoH },
-      { x: borderWidth, y: borderWidth + photoH + gap, w: outputWidth - borderWidth * 2, h: photoH }
-    ]
+  // Setup dimensions
+  let outputWidth = 1800
+  let outputHeight = 1200
+  if (hasDbLayout && dbFrame.layout_config.output_width) {
+    outputWidth = dbFrame.layout_config.output_width
+    outputHeight = dbFrame.layout_config.output_height || outputHeight
   } else {
-    // 2×2 grid (3 or 4 photos)
-    const photoW = Math.round((outputWidth - borderWidth * 2 - gap) / 2)
-    const photoH = Math.round((outputHeight - borderWidth * 2 - gap - bottomExtraSpace) / 2)
-    photoRegions = [
-      { x: borderWidth, y: borderWidth, w: photoW, h: photoH },
-      { x: borderWidth + photoW + gap, y: borderWidth, w: photoW, h: photoH },
-      { x: borderWidth, y: borderWidth + photoH + gap, w: photoW, h: photoH },
-      { x: borderWidth + photoW + gap, y: borderWidth + photoH + gap, w: photoW, h: photoH }
-    ]
+    if (printSize === '2x6') { outputWidth = 600; outputHeight = 1800 }
   }
 
-  // Create background canvas
-  let composite = sharp({
-    create: {
-      width: outputWidth,
-      height: outputHeight,
-      channels: 3,
-      background: bgColor
-    }
-  }).jpeg()
-
-  // Process and place each photo
   const compositeInputs: OverlayOptions[] = []
+  
+  if (hasDbLayout) {
+    // 1. Dynamic Layout from Database
+    let placeholders = dbFrame.layout_config.placeholders || []
+    
+    // If user uploaded a frame but didn't specify placeholders, we calculate a fallback grid
+    if (placeholders.length === 0) {
+      console.warn('[Compositing] Frame has no placeholders! Falling back to generic grid underneath the PNG.')
+      const photoCount = photoPaths.length
+      const borderWidth = Math.round(outputWidth * 0.04)
+      const gap = Math.round(outputWidth * 0.02)
+      const bottomExtraSpace = Math.round(outputHeight * 0.08)
+  
+      if (photoCount === 1) {
+        placeholders = [{ x: borderWidth, y: borderWidth, width: outputWidth - borderWidth * 2, height: outputHeight - borderWidth * 2 - bottomExtraSpace }]
+      } else if (photoCount === 2) {
+        const photoH = Math.round((outputHeight - borderWidth * 2 - gap - bottomExtraSpace) / 2)
+        placeholders = [
+          { x: borderWidth, y: borderWidth, width: outputWidth - borderWidth * 2, height: photoH },
+          { x: borderWidth, y: borderWidth + photoH + gap, width: outputWidth - borderWidth * 2, height: photoH }
+        ]
+      } else {
+        const photoW = Math.round((outputWidth - borderWidth * 2 - gap) / 2)
+        const photoH = Math.round((outputHeight - borderWidth * 2 - gap - bottomExtraSpace) / 2)
+        placeholders = [
+          { x: borderWidth, y: borderWidth, width: photoW, height: photoH },
+          { x: borderWidth + photoW + gap, y: borderWidth, width: photoW, height: photoH },
+          { x: borderWidth, y: borderWidth + photoH + gap, width: photoW, height: photoH },
+          { x: borderWidth + photoW + gap, y: borderWidth + photoH + gap, width: photoW, height: photoH }
+        ]
+      }
+    }
+    
+    // Add photos
+    for (let i = 0; i < Math.min(photoPaths.length, placeholders.length); i++) {
+      const region = placeholders[i]
+      let photoBuffer = await sharp(photoPaths[i]).toBuffer()
 
-  for (let i = 0; i < Math.min(photoPaths.length, photoRegions.length); i++) {
-    const region = photoRegions[i]
-    let photoBuffer = await sharp(photoPaths[i]).toBuffer()
+      if (filter !== 'none') {
+        photoBuffer = await applyFilter(photoBuffer as any, filter) as any
+      }
 
-    // Apply filter
-    if (filter !== 'none') {
-      photoBuffer = await applyFilter(photoBuffer as any, filter) as any
+      const resized = await sharp(photoBuffer)
+        .resize(Math.round(region.width), Math.round(region.height), { fit: 'cover', position: 'centre' })
+        .jpeg({ quality: 95 })
+        .toBuffer()
+
+      compositeInputs.push({
+        input: resized,
+        left: Math.round(region.x),
+        top: Math.round(region.y)
+      })
     }
 
-    // Resize to fit region
-    const resized = await sharp(photoBuffer)
-      .resize(region.w, region.h, { fit: 'cover', position: 'centre' })
-      .jpeg({ quality: 95 })
-      .toBuffer()
+    // Overlay Frame PNG
+    try {
+      console.log(`[Compositing] Downloading frame PNG from: ${dbFrame.file_url}`)
+      const response = await fetch(dbFrame.file_url)
+      if (response.ok) {
+        const arrayBuffer = await response.arrayBuffer()
+        const frameBuffer = Buffer.from(arrayBuffer)
+        
+        const resizedFrame = await sharp(frameBuffer)
+           .resize(outputWidth, outputHeight)
+           .png()
+           .toBuffer()
+           
+        compositeInputs.push({
+          input: resizedFrame,
+          left: 0,
+          top: 0
+        })
+      } else {
+         console.error('[Compositing] Failed to download frame PNG:', response.statusText)
+      }
+    } catch(err) {
+      console.error('[Compositing] Error downloading frame:', err)
+    }
 
-    compositeInputs.push({
-      input: resized,
-      left: region.x,
-      top: region.y
+  } else {
+    // 2. Fallback Logic (Hardcoded 4x6 / 2x6)
+    const frameColors: Record<string, { bg: string; border: string }> = {
+      'classic-white': { bg: '#ffffff', border: '#e0e0e0' },
+      'neon-glow': { bg: '#0a0a1a', border: '#ff00ff' },
+      'minimalist': { bg: '#1a1a2e', border: '#333355' }
+    }
+    const frame = frameColors[frameId] || frameColors['classic-white']
+    const parseHex = (hex: string) => ({
+      r: parseInt(hex.slice(1, 3), 16),
+      g: parseInt(hex.slice(3, 5), 16),
+      b: parseInt(hex.slice(5, 7), 16)
     })
+    
+    // Add background explicitly as first layer
+    compositeInputs.push({
+      input: await sharp({
+        create: {
+          width: outputWidth, height: outputHeight, channels: 3, background: parseHex(frame.bg)
+        }
+      }).jpeg().toBuffer(),
+      left: 0,
+      top: 0
+    })
+
+    const photoCount = photoPaths.length
+    const borderWidth = Math.round(outputWidth * 0.04)
+    const gap = Math.round(outputWidth * 0.02)
+    const bottomExtraSpace = Math.round(outputHeight * 0.08)
+
+    let photoRegions: Array<{ x: number; y: number; w: number; h: number }> = []
+
+    if (photoCount === 1) {
+      photoRegions = [{ x: borderWidth, y: borderWidth, w: outputWidth - borderWidth * 2, h: outputHeight - borderWidth * 2 - bottomExtraSpace }]
+    } else if (photoCount === 2) {
+      const photoH = Math.round((outputHeight - borderWidth * 2 - gap - bottomExtraSpace) / 2)
+      photoRegions = [
+        { x: borderWidth, y: borderWidth, w: outputWidth - borderWidth * 2, h: photoH },
+        { x: borderWidth, y: borderWidth + photoH + gap, w: outputWidth - borderWidth * 2, h: photoH }
+      ]
+    } else {
+      const photoW = Math.round((outputWidth - borderWidth * 2 - gap) / 2)
+      const photoH = Math.round((outputHeight - borderWidth * 2 - gap - bottomExtraSpace) / 2)
+      photoRegions = [
+        { x: borderWidth, y: borderWidth, w: photoW, h: photoH },
+        { x: borderWidth + photoW + gap, y: borderWidth, w: photoW, h: photoH },
+        { x: borderWidth, y: borderWidth + photoH + gap, w: photoW, h: photoH },
+        { x: borderWidth + photoW + gap, y: borderWidth + photoH + gap, w: photoW, h: photoH }
+      ]
+    }
+
+    for (let i = 0; i < Math.min(photoPaths.length, photoRegions.length); i++) {
+      const region = photoRegions[i]
+      let photoBuffer = await sharp(photoPaths[i]).toBuffer()
+      if (filter !== 'none') photoBuffer = await applyFilter(photoBuffer as any, filter) as any
+
+      const resized = await sharp(photoBuffer)
+        .resize(region.w, region.h, { fit: 'cover', position: 'centre' })
+        .jpeg({ quality: 95 })
+        .toBuffer()
+
+      compositeInputs.push({ input: resized, left: region.x, top: region.y })
+    }
   }
-
-  // Add branding text area (SVG overlay)
-  const brandingSvg = `
-    <svg width="${outputWidth}" height="${bottomExtraSpace}">
-      <text x="${outputWidth / 2}" y="${bottomExtraSpace * 0.6}" 
-        text-anchor="middle" 
-        font-family="Arial, sans-serif" 
-        font-size="${Math.round(bottomExtraSpace * 0.35)}" 
-        font-weight="bold"
-        fill="${frame.bg === '#ffffff' || frame.bg === '#f5f5f0' || frame.bg === '#faf3e0' ? '#333333' : '#cccccc'}">
-        SnapBooth
-      </text>
-      <text x="${outputWidth / 2}" y="${bottomExtraSpace * 0.9}" 
-        text-anchor="middle" 
-        font-family="Arial, sans-serif" 
-        font-size="${Math.round(bottomExtraSpace * 0.2)}" 
-        fill="${frame.bg === '#ffffff' || frame.bg === '#f5f5f0' || frame.bg === '#faf3e0' ? '#999999' : '#888888'}">
-        ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-      </text>
-    </svg>
-  `
-
-  compositeInputs.push({
-    input: Buffer.from(brandingSvg),
-    left: 0,
-    top: outputHeight - bottomExtraSpace
-  })
-
-  // Add border lines (thin decorative border inside)
-  const borderSvg = `
-    <svg width="${outputWidth}" height="${outputHeight}">
-      <rect x="${Math.round(borderWidth * 0.3)}" y="${Math.round(borderWidth * 0.3)}" 
-        width="${outputWidth - Math.round(borderWidth * 0.6)}" 
-        height="${outputHeight - Math.round(borderWidth * 0.6)}" 
-        fill="none" 
-        stroke="rgb(${borderColor.r},${borderColor.g},${borderColor.b})" 
-        stroke-width="2" 
-        rx="8" />
-    </svg>
-  `
-  compositeInputs.push({
-    input: Buffer.from(borderSvg),
-    left: 0,
-    top: 0
-  })
 
   // Execute composite
   await sharp({
     create: {
       width: outputWidth,
       height: outputHeight,
-      channels: 3,
-      background: bgColor
+      channels: 4,
+      background: { r: 255, g: 255, b: 255, alpha: 1 }
     }
   })
     .composite(compositeInputs)
