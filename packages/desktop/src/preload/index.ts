@@ -40,7 +40,8 @@ const snapboothApi = {
       ipcRenderer.invoke('compositing:save-photo', dataUrl, sessionId, index),
     process: (options: { photoPaths: string[]; filter: string; frameId: string; sessionId: string }) =>
       ipcRenderer.invoke('compositing:process', options),
-    getOutputDir: () => ipcRenderer.invoke('compositing:get-output-dir')
+    getOutputDir: () => ipcRenderer.invoke('compositing:get-output-dir'),
+    getFileBase64: (filePath: string) => ipcRenderer.invoke('compositing:get-file-base64', filePath)
   },
 
   // Database

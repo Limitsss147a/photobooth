@@ -258,6 +258,17 @@ function setupIpcHandlers(): void {
     return getPhotosDir()
   })
 
+  ipcMain.handle('compositing:get-file-base64', async (_, filePath: string) => {
+    try {
+      const { readFileSync } = require('fs')
+      const buffer = readFileSync(filePath)
+      return `data:image/jpeg;base64,${buffer.toString('base64')}`
+    } catch(err: any) {
+      console.error('[Compositing] Read file failed:', err.message)
+      return null
+    }
+  })
+
   // ============================================================
   // Printer Handlers (UPDATED)
   // ============================================================
